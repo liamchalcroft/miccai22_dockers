@@ -160,7 +160,11 @@ class PLORAS():
             t1w_ss, t1w_mask = self.robex(t1w_image_1mm)
             t1w_image_n4ss = self.n4(t1w_ss, t1w_mask)
 
-        t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image_n4ss)
+            t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image_n4ss)
+
+        else:
+            t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image)
+            
         img = t1w_image_data[None]
 
         img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
