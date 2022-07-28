@@ -5,7 +5,7 @@ scikit-learn==0.24.2
 scipy
 
 torch
-git+https://github.com/Project-MONAI/MONAI
+git+https://github.com/Project-MONAI/MONAI --install-option='BUILD_MONAI=1'
 # SimpleCRF
 pytorch-lightning
 scikit-image
