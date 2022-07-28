@@ -2,4 +2,4 @@
 
 ./build.sh
 
-docker save threshold_model | gzip -c > threshold_model.tar.gz
+docker save PLORAS | gzip -c > PLORAS.tar.gz
