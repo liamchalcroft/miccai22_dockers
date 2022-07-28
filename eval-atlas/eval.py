@@ -164,7 +164,7 @@ class PLORAS():
 
         else:
             t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image)
-            
+
         img = t1w_image_data[None]
 
         img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
@@ -225,7 +225,7 @@ class PLORAS():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = np.transpose(final_pred, [0,3,1,2])[1]
+        prediction = np.transpose(final_pred, [0,3,1,2])[1][None]
 
         prediction = (prediction > 0.5)
 
