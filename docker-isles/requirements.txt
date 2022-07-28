@@ -1,0 +1,11 @@
+
+evalutils==0.3.1
+
+scikit-learn==0.24.2
+scipy
+
+torch
+monai
+SimpleCRF
+pytorch-lightning
+scikit-image
