@@ -290,7 +290,7 @@ class PLORAS():
             self.preprocessed = False
 
         # Set input information.
-        input_filename = str(t1w_image_path).split('/')[-1].replace('T1w, label-L_mask')
+        input_filename = str(t1w_image_path).split('/')[-1].replace('T1w', 'label-L_mask')
         return input_data, input_filename
 
     def get_file_path(self, slug, filetype='image'):
