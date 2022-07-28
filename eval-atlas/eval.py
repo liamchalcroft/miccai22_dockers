@@ -154,10 +154,11 @@ class PLORAS():
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
 
-        t1w_image_1mm = self.reslice(t1w_image)
+        if not self.preprocessed:
+            t1w_image_1mm = self.reslice(t1w_image)
 
-        t1w_ss, t1w_mask = self.robex(t1w_image_1mm)
-        t1w_image_n4ss = self.n4(t1w_ss, t1w_mask)
+            t1w_ss, t1w_mask = self.robex(t1w_image_1mm)
+            t1w_image_n4ss = self.n4(t1w_ss, t1w_mask)
 
         t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image_n4ss)
         img = t1w_image_data[None]
@@ -273,7 +274,15 @@ class PLORAS():
         """ Loads the 6 inputs of ISLES22 (3 MR images, 3 metadata json files accompanying each MR modality).
         Note: Cases missing the metadata will still have a json file, though their fields will be empty. """
 
-        input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
+        preproc_path = str(t1w_image_path).split('/')
+        preproc_path[-1] = 'n4_stripped.nii.gz'
+        preproc_path = '/'.join(preproc_path)
+        if os.path.exists(preproc_path):
+            input_data = {'t1w_image': SimpleITK.ReadImage(str(preproc_path))}
+            self.preprocessed = True
+        else:
+            input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
+            self.preprocessed = False
 
         # Set input information.
         input_filename = str(t1w_image_path).split('/')[-1]
