@@ -252,7 +252,7 @@ class PLORAS():
         # Write segmentation to output location.
         if not self._algorithm_output_path.exists():
             os.makedirs(str(self._algorithm_output_path))
-        output_image_path = self._algorithm_output_path / input_filename
+        output_image_path = self._algorithm_output_path / input_filename.replace('T1w', 'label-L_mask')
         SimpleITK.WriteImage(output_image, str(output_image_path))
 
         # Write segmentation file to json.
@@ -291,7 +291,7 @@ class PLORAS():
             self.preprocessed = False
 
         # Set input information.
-        input_filename = str(t1w_image_path).split('/')[-1].replace('T1w', 'label-L_mask')
+        input_filename = str(t1w_image_path).split('/')[-1]
         return input_data, input_filename
 
     def get_file_path(self, slug, filetype='image'):
