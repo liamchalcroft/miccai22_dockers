@@ -245,6 +245,7 @@ class PLORAS():
 
         # Build the itk object.
         output_image = SimpleITK.GetImageFromArray(prediction)
+        output_image = SimpleITK.Cast(output_image, SimpleITK.sitkUInt8)
         output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
 
         # Write segmentation to output location.
@@ -289,7 +290,7 @@ class PLORAS():
             self.preprocessed = False
 
         # Set input information.
-        input_filename = str(t1w_image_path).split('/')[-1]
+        input_filename = str(t1w_image_path).split('/')[-1].replace('T1w, label-L_mask')
         return input_data, input_filename
 
     def get_file_path(self, slug, filetype='image'):
