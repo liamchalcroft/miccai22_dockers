@@ -15,6 +15,7 @@ import denseCRF3D
 from skimage.transform import resize
 import argparse
 from utils.args import get_main_args
+import subprocess
 
 
 # todo change with your team-name
