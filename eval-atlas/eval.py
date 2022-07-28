@@ -264,8 +264,8 @@ class PLORAS():
     def get_all_cases(self):
         t1w_image_paths = list((\
             self._input_path \
-                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat' /\
-                     'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz').glob())
+                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat').glob(
+                    'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz'))
 
         return t1w_image_paths
 
