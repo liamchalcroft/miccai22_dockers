@@ -20,8 +20,6 @@ import pyrobex
 from pyrobex.errors import PyRobexError
 import subprocess
 
-import nipype.interfaces.fsl as fsl # comment out or delete after debug - robex not available on macbook
-
 def _find_robex_dir() -> str:
     """finds the ROBEX source code directory"""
     file_path = Path(pyrobex.__file__).resolve()
@@ -118,22 +116,13 @@ class PLORAS():
         with tempfile.TemporaryDirectory() as td:
             tdp = Path(td)
             robex_script = _find_robex_script()
-            if self.debug:
-                tmp_img_fn = tdp / "img.nii.gz"
-                SimpleITK.WriteImage(image, str(tmp_img_fn))
-                stripped_fn = tdp / "stripped.nii.gz"
-                mask_fn = tdp / "stripped_mask.nii.gz"
-                mybet = fsl.BET(in_file=tmp_img_fn, out_file=stripped_fn, mask=True)
-                mybet.run()
-            else:
-                tmp_img_fn = tdp / "img.nii"
-                SimpleITK.WriteImage(image, str(tmp_img_fn))
-                stripped_fn = tdp / "stripped.nii"
-                mask_fn = tdp / "mask.nii"
-                args = [robex_script, tmp_img_fn, stripped_fn, mask_fn, 0]
-                str_args = list(map(str, args))
-                out = subprocess.run(str_args, capture_output=True)
-                print(out)
+            tmp_img_fn = tdp / "img.nii"
+            SimpleITK.WriteImage(image, str(tmp_img_fn))
+            stripped_fn = tdp / "stripped.nii"
+            mask_fn = tdp / "mask.nii"
+            args = [robex_script, tmp_img_fn, stripped_fn, mask_fn, 0]
+            str_args = list(map(str, args))
+            out = subprocess.run(str_args, capture_output=True)
             stripped = SimpleITK.ReadImage(str(stripped_fn))
             mask = SimpleITK.ReadImage(str(mask_fn))
         return stripped, mask
