@@ -286,15 +286,15 @@ class MDUNet(nn.Module):
             self.filters = filters[: len(self.strides)]
 
     def forward(self, x):
-        # out = self.skip_layers(x)
-        # out = self.output_block(out)
-        # if self.training and self.deep_supervision:
-        #     out_all = [out]
-        #     for feature_map in self.heads:
-        #         out_all.append(interpolate(feature_map, out.shape[2:]))
-        #     return torch.stack(out_all, dim=1)
-        # return out
-        return torch.zeros(1,2,128,128,128, dtype=x.dtype, device=x.device)
+        out = self.skip_layers(x)
+        out = self.output_block(out)
+        if self.training and self.deep_supervision:
+            out_all = [out]
+            for feature_map in self.heads:
+                out_all.append(interpolate(feature_map, out.shape[2:]))
+            return torch.stack(out_all, dim=1)
+        return out
+        # return torch.zeros(1,2,128,128,128, dtype=x.dtype, device=x.device)
 
     def get_input_block(self):
         return UnetBasicBlock(
