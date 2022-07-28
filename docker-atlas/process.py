@@ -204,6 +204,8 @@ class PLORAS():
         # pred_crf = denseCRF3D.densecrf3d(img_crf, pred_crf, dense_crf_param)
         # pred = np.transpose(pred_crf, [3,0,1,2])
 
+        pred = np.transpose(pred, [0,2,3,1])
+
         min_d, max_d = meta[0,0], meta[1,0]
         min_h, max_h = meta[0,1], meta[1,1]
         min_w, max_w = meta[0,2], meta[1,2]
@@ -220,7 +222,7 @@ class PLORAS():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = np.transpose(final_pred, [0,3,1,2])[1]
+        prediction = final_pred[1]
 
         prediction = (prediction > 0.5)
 
