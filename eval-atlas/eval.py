@@ -18,6 +18,7 @@ import tempfile
 import pyrobex
 from pyrobex.errors import PyRobexError
 import glob
+import subprocess
 from tqdm import tqdm
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
@@ -262,10 +263,10 @@ class PLORAS():
 
 
     def get_all_cases(self):
-        t1w_image_paths = list((\
+        t1w_image_paths = list(glob.glob(str(\
             self._input_path \
-                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat').glob(
-                    'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz'))
+                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat' /\
+                    'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz')))
 
         return t1w_image_paths
 
