@@ -173,13 +173,14 @@ class PLORAS():
         # plt.show()
 
         pred = 0
-        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        img = img.permute(0,3,1,2)[None]
-        for m in list(self.models):
-            if type(pred)==int:
-                pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-            else:
-                pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
+        with torch.no_grad():
+            img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+            img = img.permute(0,3,1,2)[None]
+            for m in list(self.models):
+                if type(pred)==int:
+                    pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
+                else:
+                    pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
         pred /= len(list(self.models))
 
         # img_crf = img[0].cpu().detach().numpy()
