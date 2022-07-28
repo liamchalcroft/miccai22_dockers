@@ -77,7 +77,7 @@ class PLORAS():
             parser.add_argument('--' + k, default=v)
         args = parser.parse_args()
 
-        self.crf = monai.networks.blocks.crf(
+        self.crf = monai.networks.blocks.CRF(
             iterations=5,
             bilateral_weight=1.,
             gaussian_weight=1.,
