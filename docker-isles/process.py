@@ -26,8 +26,8 @@ class PLORAS():
 
         self.debug = True  # False for running the docker!
         if self.debug:
-            self._input_path = Path('/Users/liamchalcroft/Downloads/docker-isles/test/')
-            self._output_path = Path('/Users/liamchalcroft/Downloads/docker-isles/output/')
+            self._input_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/test/')
+            self._output_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/output/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
             self._case_results = []
