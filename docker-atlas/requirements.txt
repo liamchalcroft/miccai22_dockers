@@ -5,8 +5,8 @@ scikit-learn==0.24.2
 scipy
 
 torch>=1.7
-git+https://github.com/Project-MONAI/MONAI --global-option='BUILD_MONAI=1' --install-option='--no-build-isolation'
-# SimpleCRF
+monai
+SimpleCRF
 pytorch-lightning
 scikit-image
 pyrobex

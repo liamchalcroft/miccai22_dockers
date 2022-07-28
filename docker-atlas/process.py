@@ -77,17 +77,6 @@ class PLORAS():
             parser.add_argument('--' + k, default=v)
         args = parser.parse_args()
 
-        self.crf = monai.networks.blocks.CRF(
-            iterations=5,
-            bilateral_weight=1.,
-            gaussian_weight=1.,
-            bilateral_spatial_sigma=5.,
-            bilateral_color_sigma=0.5,
-            gaussian_spatial_sigma=5.,
-            update_factor=3.,
-            compatibility_matrix=None
-        ).to(self.device)
-
         self.model_paths = [
             'checkpoints/0/best.ckpt', 'checkpoints/1/best.ckpt', 
             'checkpoints/2/best.ckpt', 'checkpoints/3/best.ckpt', 
@@ -183,53 +172,39 @@ class PLORAS():
         # plt.imshow(img[0,...,100])
         # plt.show()
 
-        # pred = 0
-        # with torch.no_grad():
-        #     img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        #     img = img.permute(0,3,1,2)[None]
-        #     for m in list(self.models):
-        #         if type(pred)==int:
-        #             pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-        #         else:
-        #             pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-        # pred /= len(list(self.models))
-
-        # img_crf = img[0].cpu().detach().numpy()
-        # img_crf = img_crf - img_crf.min()
-        # img_crf = 255 * (img_crf / img_crf.max())
-        # img_crf = img_crf.astype(np.uint8)
-        # img_crf = np.transpose(img_crf, [1,2,3,0])
-        # pred_crf = np.transpose(pred, [1,2,3,0])
-        # dense_crf_param = {}
-        # dense_crf_param['MaxIterations'] = 2.0
-        # dense_crf_param['PosW'] = 2.0
-        # dense_crf_param['PosRStd'] = 5
-        # dense_crf_param['PosCStd'] = 5
-        # dense_crf_param['PosZStd'] = 5
-        # dense_crf_param['BilateralW'] = 3.0
-        # dense_crf_param['BilateralRStd'] = 5.0
-        # dense_crf_param['BilateralCStd'] = 5.0
-        # dense_crf_param['BilateralZStd'] = 5.0
-        # dense_crf_param['ModalityNum'] = img_crf.shape[-1]
-        # dense_crf_param['BilateralModsStds'] = [5.0] * img_crf.shape[-1]
-        # pred_crf = denseCRF3D.densecrf3d(img_crf, pred_crf, dense_crf_param)
-        # pred = np.transpose(pred_crf, [3,0,1,2])
-
-        # pred = np.transpose(pred, [0,2,3,1])
-
         pred = 0
         with torch.no_grad():
             img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
             img = img.permute(0,3,1,2)[None]
             for m in list(self.models):
                 if type(pred)==int:
-                    pred = m._forward(img)
+                    pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
                 else:
-                    pred += m._forward(img)
+                    pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
         pred /= len(list(self.models))
 
-        pred = self.crf(pred, img)
-        pred = pred[0]
+        img_crf = img[0].cpu().detach().numpy()
+        img_crf = img_crf - img_crf.min()
+        img_crf = 255 * (img_crf / img_crf.max())
+        img_crf = img_crf.astype(np.uint8)
+        img_crf = np.transpose(img_crf, [1,2,3,0])
+        pred_crf = np.transpose(pred, [1,2,3,0])
+        dense_crf_param = {}
+        dense_crf_param['MaxIterations'] = 2.0
+        dense_crf_param['PosW'] = 2.0
+        dense_crf_param['PosRStd'] = 5
+        dense_crf_param['PosCStd'] = 5
+        dense_crf_param['PosZStd'] = 5
+        dense_crf_param['BilateralW'] = 3.0
+        dense_crf_param['BilateralRStd'] = 5.0
+        dense_crf_param['BilateralCStd'] = 5.0
+        dense_crf_param['BilateralZStd'] = 5.0
+        dense_crf_param['ModalityNum'] = img_crf.shape[-1]
+        dense_crf_param['BilateralModsStds'] = [5.0] * img_crf.shape[-1]
+        pred_crf = denseCRF3D.densecrf3d(img_crf, pred_crf, dense_crf_param)
+        pred = np.transpose(pred_crf, [3,0,1,2])
+
+        pred = np.transpose(pred, [0,2,3,1])
 
         min_d, max_d = meta[0,0], meta[1,0]
         min_h, max_h = meta[0,1], meta[1,1]
