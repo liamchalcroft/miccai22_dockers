@@ -151,9 +151,6 @@ class PLORAS():
         # Get all image inputs.
         t1w_image = input_data['t1w_image']
 
-        # Get all json inputs.
-        t1w_json = input_data['t1w_json']
-
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
 
@@ -255,7 +252,7 @@ class PLORAS():
         if output_image_path.exists():
             json_result = {"outputs": [dict(type="Image", slug="stroke-lesion-segmentation",
                                                  filename=str(output_image_path.name))],
-                           "inputs": [dict(type="Image", slug="dwi-brain-mri",
+                           "inputs": [dict(type="Image", slug="t1w-brain-mri",
                                            filename=input_filename)]}
 
             self._case_results.append(json_result)
@@ -267,6 +264,7 @@ class PLORAS():
             self._input_path \
                 / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat' /\
                     'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz')))
+        t1w_image_paths = [Path(p) for p in t1w_image_paths]
 
         return t1w_image_paths
 
