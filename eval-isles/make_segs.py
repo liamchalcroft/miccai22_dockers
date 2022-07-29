@@ -13,8 +13,29 @@ from nnunet.nn_unet import NNUnet
 import monai
 from skimage.transform import resize
 import argparse
-import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
+import tempfile
+import pyrobex
+from pyrobex.errors import PyRobexError
+import glob
+from tqdm import tqdm
+
+"""ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
+
+def _find_robex_dir() -> str:
+    """finds the ROBEX source code directory"""
+    file_path = Path(pyrobex.__file__).resolve()
+    pyrobex_dir = file_path.parent
+    robex_dist = pyrobex_dir / "ROBEX"
+    return str(robex_dist)
+
+
+def _find_robex_script() -> str:
+    """finds the ROBEX shell script"""
+    robex_dist = Path(_find_robex_dir())
+    robex_script = robex_dist / "runROBEX.sh"
+    if not robex_script.is_file():
+        raise PyRobexError("Could not find `runROBEX.sh` script.")
+    return str(robex_script)
 
 
 # todo change with your team-name
@@ -25,8 +46,8 @@ class PLORAS():
 
         self.debug = True  # False for running the docker!
         if self.debug:
-            self._input_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/test/')
-            self._output_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/output/')
+            self._input_path = Path('/home/lchalcroft/Data/ISLES/2022/Testing/')
+            self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/raw_segs/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
             self._case_results = []
@@ -58,9 +79,9 @@ class PLORAS():
         args = parser.parse_args()
 
         self.model_paths = [
-            'checkpoints/0/best.ckpt', 'checkpoints/1/best.ckpt', 
-            'checkpoints/2/best.ckpt', 'checkpoints/3/best.ckpt', 
-            'checkpoints/4/best.ckpt'
+            '../docker-atlas/checkpoints/0/best.ckpt', '../docker-atlas/checkpoints/1/best.ckpt', 
+            '../docker-atlas/checkpoints/2/best.ckpt', '../docker-atlas/checkpoints/3/best.ckpt', 
+            '../docker-atlas/checkpoints/4/best.ckpt'
             ]
         self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
         for model,path in zip(self.models, self.model_paths):
@@ -92,23 +113,35 @@ class PLORAS():
                          image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                          image.GetPixelID())
 
-    def crf(self, image, pred):
-        image = np.transpose(image, [1,2,3,0])
-        pair_energy = create_pairwise_bilateral(sdims=(5.0,)*3, schan=(5.0,)*image.shape[-1], img=image, chdim=3)
-        d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
-        U = unary_from_softmax(pred)
-        d.setUnaryEnergy(U)
-        d.addPairwiseEnergy(pair_energy, compat=10)
-        out = d.inference(5)
-        out = np.asarray(out, np.float32).reshape(pred.shape)
-        return out
+    def robex(self, image):
+        with tempfile.TemporaryDirectory() as td:
+            tdp = Path(td)
+            robex_script = _find_robex_script()
+            tmp_img_fn = tdp / "img.nii"
+            SimpleITK.WriteImage(image, str(tmp_img_fn))
+            stripped_fn = tdp / "stripped.nii"
+            mask_fn = tdp / "mask.nii"
+            args = [robex_script, tmp_img_fn, stripped_fn, mask_fn, 0]
+            str_args = list(map(str, args))
+            out = subprocess.run(str_args, capture_output=True)
+            stripped = SimpleITK.ReadImage(str(stripped_fn))
+            mask = SimpleITK.ReadImage(str(mask_fn))
+        return stripped, mask
+
+    def n4(self, image, mask=None):
+        mask = mask if mask is not None else SimpleITK.OtsuThreshold(image, 0, 1, 200)
+        mask = SimpleITK.Cast(mask, SimpleITK.sitkUInt8)
+        corrector = SimpleITK.N4BiasFieldCorrectionImageFilter()
+        corrected = corrector.Execute(image, mask)
+        bias = corrector.GetLogBiasFieldAsImage(image)
+        corrected_hr = image / SimpleITK.Exp(bias)
+        return corrected_hr
 
     def predict(self, input_data):
         """
         Input   input_data, dict.
                 The dictionary contains 3 images and 3 json files.
-                keys:  'dwi_image' , 'adc_image', 'flair_image', 
-                        'dwi_json', 'adc_json', 'flair_json'
+                keys:  't1w_image' , 't1w_json'
 
         Output  prediction, array.
                 Binary mask encoding the lesion segmentation (0 background, 1 foreground).
@@ -161,15 +194,6 @@ class PLORAS():
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
         pred /= len(list(self.models))
 
-        img_crf = img[0].cpu().detach().numpy()
-        img_crf = img_crf - img_crf.min()
-        img_crf = 255 * (img_crf / img_crf.max())
-        img_crf[img_crf < 0] = 0
-        img_crf[img_crf > 255] = 255
-        img_crf = np.asarray(img_crf, np.uint8)
-        pred_crf = np.asarray(pred, np.float32)
-        pred = self.crf(img_crf, pred_crf)
-
         pred = np.transpose(pred, [0,2,3,1])
 
         min_d, max_d = meta[0,0], meta[1,0]
@@ -190,12 +214,10 @@ class PLORAS():
 
         prediction = final_pred[1]
 
-        prediction = (prediction > 0.5)
-
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(int)
+        return prediction.astype(np.float32)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
@@ -227,19 +249,19 @@ class PLORAS():
             self.save()
 
 
+    def get_all_cases(self):
+        t1w_image_paths = list(glob.glob(str(\
+            self._input_path \
+                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat' /\
+                    'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz')))
+        t1w_image_paths = [Path(p) for p in t1w_image_paths]
+
+        return t1w_image_paths
+
+
     def load_isles_case(self):
         """ Loads the 6 inputs of ISLES22 (3 MR images, 3 metadata json files accompanying each MR modality).
         Note: Cases missing the metadata will still have a json file, though their fields will be empty. """
-
-        preproc_path = str(t1w_image_path).split('/')
-        preproc_path[-1] = 'n4_stripped.nii.gz'
-        preproc_path = '/'.join(preproc_path)
-        if os.path.exists(preproc_path):
-            input_data = {'t1w_image': SimpleITK.ReadImage(str(preproc_path))}
-            self.preprocessed = True
-        else:
-            input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
-            self.preprocessed = False
 
         # Get MR data paths.
         dwi_image_path = self.get_file_path(slug='dwi-brain-mri', filetype='image')
@@ -278,8 +300,10 @@ class PLORAS():
             json.dump(self._case_results, f)
 
     def process(self):
-        input_data, input_filename = self.load_isles_case()
-        self.process_isles_case(input_data, input_filename)
+        t1w_image_paths = self.get_all_cases()
+        for t1w_image_path in tqdm(t1w_image_paths, total=len(t1w_image_paths)):
+            input_data, input_filename = self.load_isles_case(t1w_image_path)
+            self.process_isles_case(input_data, input_filename)
 
 
 if __name__ == "__main__":
