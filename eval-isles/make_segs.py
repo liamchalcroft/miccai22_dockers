@@ -32,7 +32,7 @@ class PLORAS():
         self.debug = True  # False for running the docker!
         if self.debug:
             self._input_path = Path('/home/lchalcroft/Data/ISLES/2022/')
-            self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/raw_segs/')
+            self._output_path = Path('/home/lchalcroft/mdunet/isles-eval/raw_segs/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
             self._case_results = []
@@ -64,9 +64,9 @@ class PLORAS():
         args = parser.parse_args()
 
         self.model_paths = [
-            '../docker-atlas/checkpoints/0/best.ckpt', '../docker-atlas/checkpoints/1/best.ckpt', 
-            '../docker-atlas/checkpoints/2/best.ckpt', '../docker-atlas/checkpoints/3/best.ckpt', 
-            '../docker-atlas/checkpoints/4/best.ckpt'
+            '../docker-isles/checkpoints/0/best.ckpt', '../docker-isles/checkpoints/1/best.ckpt', 
+            '../docker-isles/checkpoints/2/best.ckpt', '../docker-isles/checkpoints/3/best.ckpt', 
+            '../docker-isles/checkpoints/4/best.ckpt'
             ]
         self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
         for model,path in zip(self.models, self.model_paths):
