@@ -11,14 +11,14 @@ DEFAULT_ALGORITHM_OUTPUT_FILE_PATH = Path("/output/results.json")
 import torch
 from nnunet.nn_unet import NNUnet
 import monai
-import denseCRF3D
 from skimage.transform import resize
 import argparse
-from utils.args import get_main_args
 import tempfile
 import pyrobex
 from pyrobex.errors import PyRobexError
 import subprocess
+import pydensecrf.densecrf as dcrf
+from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 
 def _find_robex_dir() -> str:
     """finds the ROBEX source code directory"""
@@ -136,6 +136,16 @@ class PLORAS():
         corrected_hr = image / SimpleITK.Exp(bias)
         return corrected_hr
 
+    def crf(self, image, pred):
+        pair_energy = create_pairwise_bilateral(sdims=(10,)*3, schan=(5.0,)*image[0], img=image, chdim=0)
+        d = dcrf.DenseCRF(np.prod(image.shape[1:]), pred.shape[0])
+        U = unary_from_softmax(pred)
+        d.setUnaryEnergy(U)
+        d.addPairwiseEnergy(pair_energy, compat=10)
+        out = d.inference(5)
+        out = out.reshape(pred.shape)
+        return pred
+
     def predict(self, input_data):
         """
         Input   input_data, dict.
@@ -186,23 +196,11 @@ class PLORAS():
         img_crf = img[0].cpu().detach().numpy()
         img_crf = img_crf - img_crf.min()
         img_crf = 255 * (img_crf / img_crf.max())
-        img_crf = img_crf.astype(np.uint8)
-        img_crf = np.transpose(img_crf, [1,2,3,0])
-        pred_crf = np.transpose(pred, [1,2,3,0])
-        dense_crf_param = {}
-        dense_crf_param['MaxIterations'] = 2.0
-        dense_crf_param['PosW'] = 2.0
-        dense_crf_param['PosRStd'] = 5
-        dense_crf_param['PosCStd'] = 5
-        dense_crf_param['PosZStd'] = 5
-        dense_crf_param['BilateralW'] = 3.0
-        dense_crf_param['BilateralRStd'] = 5.0
-        dense_crf_param['BilateralCStd'] = 5.0
-        dense_crf_param['BilateralZStd'] = 5.0
-        dense_crf_param['ModalityNum'] = img_crf.shape[-1]
-        dense_crf_param['BilateralModsStds'] = [5.0] * img_crf.shape[-1]
-        pred_crf = denseCRF3D.densecrf3d(img_crf, pred_crf, dense_crf_param)
-        pred = np.transpose(pred_crf, [3,0,1,2])
+        img_crf[img_crf < 0] = 0
+        img_crf[img_crf > 255] = 255
+        img_crf = np.asarray(img_crf, np.uint8)
+        pred_crf = np.asarray(pred, np.float32)
+        pred = self.crf(img_crf, pred_crf)
 
         pred = np.transpose(pred, [0,2,3,1])
 
