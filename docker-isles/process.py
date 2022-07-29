@@ -14,7 +14,7 @@ import monai
 from skimage.transform import resize
 import argparse
 import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_softmax, create_pairwise_gaussian
+from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 
 
 # todo change with your team-name
@@ -93,8 +93,9 @@ class PLORAS():
                          image.GetPixelID())
 
     def crf(self, image, pred):
-        pair_energy = create_pairwise_gaussian(sdims=(10,)*3, shape=image.shape[1:])
-        d = dcrf.DenseCRF(np.prod(image.shape[1:]), pred.shape[0])
+        image = np.transpose(image, [1,2,3,0])
+        pair_energy = create_pairwise_bilateral(sdims=(5.0,)*3, schan=(5.0,)*image.shape[-1], img=image, chdim=3)
+        d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
         U = unary_from_softmax(pred)
         d.setUnaryEnergy(U)
         d.addPairwiseEnergy(pair_energy, compat=10)

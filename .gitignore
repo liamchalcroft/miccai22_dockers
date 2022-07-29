@@ -369,4 +369,11 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+# Project-specific stuff
+*.ckpt
+*.mha
+*.nii
+*.nii.gz
+*.zip
+
 # End of https://www.toptal.com/developers/gitignore/api/python,cuda,jupyternotebooks,pycharm,macos,windows,linux

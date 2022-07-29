@@ -50,7 +50,7 @@ class PLORAS():
         self.debug = True  # False for running the docker!
         if self.debug:
             self._input_path = Path('/home/lchalcroft/Data/ATLAS_R2.0/Testing/')
-            self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/output/')
+            self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/raw_segs/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
             self._case_results = []
@@ -199,15 +199,6 @@ class PLORAS():
                 else:
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
         pred /= len(list(self.models))
-
-        img_crf = img[0].cpu().detach().numpy()
-        img_crf = img_crf - img_crf.min()
-        img_crf = 255 * (img_crf / img_crf.max())
-        img_crf[img_crf < 0] = 0
-        img_crf[img_crf > 255] = 255
-        img_crf = np.asarray(img_crf, np.uint8)
-        pred_crf = np.asarray(pred, np.float32)
-        pred = self.crf(img_crf, pred_crf)
 
         pred = np.transpose(pred, [0,2,3,1])
 
