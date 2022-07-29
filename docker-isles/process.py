@@ -231,15 +231,6 @@ class PLORAS():
         """ Loads the 6 inputs of ISLES22 (3 MR images, 3 metadata json files accompanying each MR modality).
         Note: Cases missing the metadata will still have a json file, though their fields will be empty. """
 
-        preproc_path = str(t1w_image_path).split('/')
-        preproc_path[-1] = 'n4_stripped.nii.gz'
-        preproc_path = '/'.join(preproc_path)
-        if os.path.exists(preproc_path):
-            input_data = {'t1w_image': SimpleITK.ReadImage(str(preproc_path))}
-            self.preprocessed = True
-        else:
-            input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
-            self.preprocessed = False
 
         # Get MR data paths.
         dwi_image_path = self.get_file_path(slug='dwi-brain-mri', filetype='image')

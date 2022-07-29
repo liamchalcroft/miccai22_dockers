@@ -21,21 +21,6 @@ from tqdm import tqdm
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
 
-def _find_robex_dir() -> str:
-    """finds the ROBEX source code directory"""
-    file_path = Path(pyrobex.__file__).resolve()
-    pyrobex_dir = file_path.parent
-    robex_dist = pyrobex_dir / "ROBEX"
-    return str(robex_dist)
-
-
-def _find_robex_script() -> str:
-    """finds the ROBEX shell script"""
-    robex_dist = Path(_find_robex_dir())
-    robex_script = robex_dist / "runROBEX.sh"
-    if not robex_script.is_file():
-        raise PyRobexError("Could not find `runROBEX.sh` script.")
-    return str(robex_script)
 
 
 # todo change with your team-name
@@ -46,7 +31,7 @@ class PLORAS():
 
         self.debug = True  # False for running the docker!
         if self.debug:
-            self._input_path = Path('/home/lchalcroft/Data/ISLES/2022/Testing/')
+            self._input_path = Path('/home/lchalcroft/Data/ISLES/2022/')
             self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/raw_segs/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
@@ -113,29 +98,6 @@ class PLORAS():
                          image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                          image.GetPixelID())
 
-    def robex(self, image):
-        with tempfile.TemporaryDirectory() as td:
-            tdp = Path(td)
-            robex_script = _find_robex_script()
-            tmp_img_fn = tdp / "img.nii"
-            SimpleITK.WriteImage(image, str(tmp_img_fn))
-            stripped_fn = tdp / "stripped.nii"
-            mask_fn = tdp / "mask.nii"
-            args = [robex_script, tmp_img_fn, stripped_fn, mask_fn, 0]
-            str_args = list(map(str, args))
-            out = subprocess.run(str_args, capture_output=True)
-            stripped = SimpleITK.ReadImage(str(stripped_fn))
-            mask = SimpleITK.ReadImage(str(mask_fn))
-        return stripped, mask
-
-    def n4(self, image, mask=None):
-        mask = mask if mask is not None else SimpleITK.OtsuThreshold(image, 0, 1, 200)
-        mask = SimpleITK.Cast(mask, SimpleITK.sitkUInt8)
-        corrector = SimpleITK.N4BiasFieldCorrectionImageFilter()
-        corrected = corrector.Execute(image, mask)
-        bias = corrector.GetLogBiasFieldAsImage(image)
-        corrected_hr = image / SimpleITK.Exp(bias)
-        return corrected_hr
 
     def predict(self, input_data):
         """
@@ -150,12 +112,6 @@ class PLORAS():
         dwi_image, adc_image, flair_image = input_data['dwi_image'],\
                                             input_data['adc_image'],\
                                             input_data['flair_image']
-
-
-        # Get all json inputs.
-        dwi_json, adc_json, flair_json = input_data['dwi_json'],\
-                                         input_data['adc_json'],\
-                                         input_data['flair_json']
 
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
@@ -250,32 +206,27 @@ class PLORAS():
 
 
     def get_all_cases(self):
-        t1w_image_paths = list(glob.glob(str(\
+        dwi_image_paths = list(glob.glob(str(\
             self._input_path \
-                / 'R*' / 'sub-r*s*' / 'ses-*' / 'anat' /\
-                    'sub-r*s*_ses-*_space-MNI152NLin2009aSym_T1w.nii.gz')))
-        t1w_image_paths = [Path(p) for p in t1w_image_paths]
+                / '*' / 'rawdata' / 'sub-strokecase*' / 'ses-*' /\
+                    'sub-strokecase*_ses-*_dwi.nii.gz')))
+        image_paths = [[
+            Path(p), Path(p.replace('dwi', 'adc')), Path(p.replace('dwi', 'flair'))
+            ] for p in dwi_image_paths
+            ]
 
-        return t1w_image_paths
+        return image_paths
 
 
-    def load_isles_case(self):
+    def load_isles_case(self, img_paths):
         """ Loads the 6 inputs of ISLES22 (3 MR images, 3 metadata json files accompanying each MR modality).
         Note: Cases missing the metadata will still have a json file, though their fields will be empty. """
 
-        # Get MR data paths.
-        dwi_image_path = self.get_file_path(slug='dwi-brain-mri', filetype='image')
-        adc_image_path = self.get_file_path(slug='adc-brain-mri', filetype='image')
-        flair_image_path = self.get_file_path(slug='flair-brain-mri', filetype='image')
+        dwi_image_path, adc_image_path, flair_image_path = img_paths
 
-        # Get MR metadata paths.
-        dwi_json_path = self.get_file_path(slug='dwi-mri-acquisition-parameters', filetype='json')
-        adc_json_path = self.get_file_path(slug='adc-mri-parameters', filetype='json')
-        flair_json_path = self.get_file_path(slug='flair-mri-acquisition-parameters', filetype='json')
-
-        input_data = {'dwi_image': SimpleITK.ReadImage(str(dwi_image_path)), 'dwi_json': json.load(open(dwi_json_path)),
-                      'adc_image': SimpleITK.ReadImage(str(adc_image_path)), 'adc_json': json.load(open(adc_json_path)),
-                      'flair_image': SimpleITK.ReadImage(str(flair_image_path)), 'flair_json': json.load(open(flair_json_path))}
+        input_data = {'dwi_image': SimpleITK.ReadImage(str(dwi_image_path)), 
+                      'adc_image': SimpleITK.ReadImage(str(adc_image_path)), 
+                      'flair_image': SimpleITK.ReadImage(str(flair_image_path))}
 
         # Set input information.
         input_filename = str(dwi_image_path).split('/')[-1]
@@ -300,9 +251,9 @@ class PLORAS():
             json.dump(self._case_results, f)
 
     def process(self):
-        t1w_image_paths = self.get_all_cases()
-        for t1w_image_path in tqdm(t1w_image_paths, total=len(t1w_image_paths)):
-            input_data, input_filename = self.load_isles_case(t1w_image_path)
+        image_paths = self.get_all_cases()
+        for image_path in tqdm(image_paths, total=len(image_paths)):
+            input_data, input_filename = self.load_isles_case(image_path)
             self.process_isles_case(input_data, input_filename)
 
 
