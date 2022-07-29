@@ -19,7 +19,7 @@ from pyrobex.errors import PyRobexError
 import glob
 import subprocess
 import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
+from pydensecrf.utils import unary_from_softmax, create_pairwise_gaussian
 from tqdm import tqdm
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
@@ -141,14 +141,14 @@ class PLORAS():
         return corrected_hr
 
     def crf(self, image, pred):
-        pair_energy = create_pairwise_bilateral(sdims=(10,)*3, schan=(5.0,)*image[0], img=image, chdim=0)
+        pair_energy = create_pairwise_gaussian(sdims=(10,)*3, shape=image.shape[1:])
         d = dcrf.DenseCRF(np.prod(image.shape[1:]), pred.shape[0])
         U = unary_from_softmax(pred)
         d.setUnaryEnergy(U)
         d.addPairwiseEnergy(pair_energy, compat=10)
         out = d.inference(5)
-        out = out.reshape(pred.shape)
-        return pred
+        out = np.asarray(out, np.float32).reshape(pred.shape)
+        return out
 
     def predict(self, input_data):
         """
