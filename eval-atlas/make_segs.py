@@ -140,17 +140,6 @@ class PLORAS():
         corrected_hr = image / SimpleITK.Exp(bias)
         return corrected_hr
 
-    def crf(self, image, pred):
-        image = np.transpose(image, [1,2,3,0])
-        pair_energy = create_pairwise_bilateral(sdims=(5.0,)*3, schan=(5.0,)*image.shape[-1], img=image, chdim=3)
-        d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
-        U = unary_from_softmax(pred)
-        d.setUnaryEnergy(U)
-        d.addPairwiseEnergy(pair_energy, compat=10)
-        out = d.inference(5)
-        out = np.asarray(out, np.float32).reshape(pred.shape)
-        return out
-
     def predict(self, input_data):
         """
         Input   input_data, dict.
@@ -220,12 +209,10 @@ class PLORAS():
 
         prediction = final_pred[1]
 
-        prediction = (prediction > 0.5)
-
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(np.uint8)
+        return prediction.astype(np.float32)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
