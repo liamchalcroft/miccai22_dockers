@@ -168,18 +168,16 @@ class PLORAS():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        print(np.sum(final_pred))
         prediction = final_pred[1].astype(np.float32)
-        print(np.sum(prediction))
 
-        prediction = SimpleITK.GetImageFromArray(prediction)
-        prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
+        # prediction = SimpleITK.GetImageFromArray(prediction)
+        # prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
 
-        prediction = self.reslice(prediction, reference=dwi_image_rs)
-        prediction = self.reslice(prediction, reference=dwi_image)
+        # prediction = self.reslice(prediction, reference=dwi_image_rs)
+        # prediction = self.reslice(prediction, reference=dwi_image)
 
-        prediction = SimpleITK.GetArrayFromImage(prediction)
-        print(np.sum(prediction))
+        # prediction = SimpleITK.GetArrayFromImage(prediction)
+        # print(np.sum(prediction))
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
@@ -197,7 +195,7 @@ class PLORAS():
 
         # Build the itk object.
         output_image = SimpleITK.GetImageFromArray(prediction)
-        output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
+        # output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
 
         # Write segmentation to output location.
         if not self._algorithm_output_path.exists():
