@@ -168,6 +168,7 @@ class PLORAS():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
+        print(np.sum(prediction))
         prediction = final_pred[1].astype(np.float32)
         print(np.sum(prediction))
 
