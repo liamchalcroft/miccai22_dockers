@@ -143,7 +143,7 @@ class PLORAS():
         pred = 0
         with torch.no_grad():
             img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-            img = img.permute(0,3,1,2)[None]
+            img = img.permute(0,2,3,1)[None]
             print(img.shape)
             for m in list(self.models):
                 if type(pred)==int:
@@ -153,7 +153,7 @@ class PLORAS():
         pred /= len(list(self.models))
         print(pred.shape)
 
-        pred = np.transpose(pred, [0,2,3,1])
+        pred = np.transpose(pred, [0,3,1,2])
         print(pred.shape)
 
         min_d, max_d = meta[0,0], meta[1,0]
