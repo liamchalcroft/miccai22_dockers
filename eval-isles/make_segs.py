@@ -169,6 +169,7 @@ class PLORAS():
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
         prediction = final_pred[1].astype(np.float32)
+        print(np.sum(prediction))
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -176,6 +177,7 @@ class PLORAS():
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
+        print(np.sum(prediction))
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
