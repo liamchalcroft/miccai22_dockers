@@ -227,7 +227,14 @@ class PLORAS():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = final_pred[1]
+        prediction = final_pred[1].astype(np.float32)
+
+        prediction = SimpleITK.GetImageFromArray(prediction)
+        prediction.SetOrigin(t1w_image_n4ss.GetOrigin()), prediction.SetSpacing(t1w_image_n4ss.GetSpacing()), prediction.SetDirection(t1w_image_n4ss.GetDirection())
+
+        prediction = self.reslice(prediction, reference=t1w_image)
+
+        prediction = SimpleITK.GetArrayFromImage(prediction)
 
         prediction = (prediction > 0.5)
 
