@@ -159,7 +159,9 @@ class PLORAS():
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
                 print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
         # pred = np.mean(np.stack(pred, axis=0), axis=0)
-        pred = np.argmax(np.stack(pred, axis=0), axis=0)
+        pred = np.stack(pred, axis=0) > 0.5
+        pred = np.concatenate([np.zeros(pred.shape[1:]), pred], axis=0)
+        pred = np.argmax(pred, axis=0)
         print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
