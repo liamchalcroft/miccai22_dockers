@@ -46,7 +46,7 @@ class PLORAS():
             'brats':False, 'paste':0, 'focal':False, 
             'shape':False, 'exec_mode':'test', 'benchmark':False, 
             'filters':None, 'md_encoder':True, 'task':16, 
-            'min_fmap':4, 'tta':False, 'deep_supervision':True, 
+            'min_fmap':4, 'tta':True, 'deep_supervision':True, 
             'config':'config/config.pkl', 'depth':5, 'deep_supr_num':2,
             'res_block':False, 'num_units':2, 'md_decoder':False,
             'val_batch_size':1, 'overlap':0.5, 'blend':'gaussian',
