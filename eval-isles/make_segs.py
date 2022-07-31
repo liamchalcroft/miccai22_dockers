@@ -139,17 +139,14 @@ class PLORAS():
         # plt.imshow(img[0,...,100])
         # plt.show()
 
-        pred = 0
+        pred = []
         with torch.no_grad():
             img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
             img = img.permute(0,2,3,1)[None]
             for m in list(self.models):
-                if type(pred)==int:
-                    pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-                else:
-                    pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-                print(pred[1].mean(), pred[1].sum(), pred[1].max())
-        pred /= len(list(self.models))
+                pred.append(softmax(m._forward(img)[0].cpu().detach().numpy(), axis=0))
+                print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
         print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
