@@ -159,7 +159,9 @@ class PLORAS():
                     pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
                 else:
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
+                print(pred.mean(), pred.sum(), pred.max())
         pred /= len(list(self.models))
+        print(pred.mean(), pred.sum(), pred.max())
 
         # img_crf = img[0].cpu().detach().numpy()
         # img_crf = img_crf - img_crf.min()
@@ -189,6 +191,7 @@ class PLORAS():
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
         prediction = final_pred[1].astype(np.float32)
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -196,8 +199,10 @@ class PLORAS():
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction[prediction > 1] = 0
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         # prediction = (prediction > 0.5)
 
