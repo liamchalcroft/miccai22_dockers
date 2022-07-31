@@ -64,8 +64,10 @@ class PLORAS():
             'checkpoints/4/best.ckpt'
             ]
         self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
-        for model,path in zip(self.models, self.model_paths):
-            model.load_state_dict(torch.load(path, map_location=self.device)['state_dict'])
+        self.models = [model.load_from_checkpoint(path) for model,path in zip(self.models, self.model_paths)]
+        for model in self.models:
+            model.eval()
+            model.freeze()
             model.model.training = False
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
