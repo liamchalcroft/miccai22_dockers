@@ -159,9 +159,9 @@ class PLORAS():
                     pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
                 else:
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-                print(pred.mean(), pred.sum(), pred.max())
+                print(pred[1].mean(), pred[1].sum(), pred[1].max())
         pred /= len(list(self.models))
-        print(pred.mean(), pred.sum(), pred.max())
+        print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
         # img_crf = img_crf - img_crf.min()
@@ -180,13 +180,13 @@ class PLORAS():
 
         n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
 
-        if not all(cropped_shape == pred.shape[1:]):
-            resized_pred = np.zeros((n_class, *cropped_shape))
-            for i in range(n_class):
-                resized_pred[i] = resize(
-                    pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
-                )
-            pred = resized_pred
+        # if not all(cropped_shape == pred.shape[1:]):
+        #     resized_pred = np.zeros((n_class, *cropped_shape))
+        #     for i in range(n_class):
+        #         resized_pred[i] = resize(
+        #             pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
+        #         )
+        #     pred = resized_pred
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
