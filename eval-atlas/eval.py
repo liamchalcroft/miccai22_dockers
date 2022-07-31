@@ -239,7 +239,7 @@ class PLORAS():
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(np.uint8)
+        return prediction.astype(int)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
