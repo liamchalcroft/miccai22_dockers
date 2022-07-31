@@ -203,7 +203,7 @@ class PLORAS():
         prediction[prediction > 1] = 0
         print(prediction.mean(), prediction.sum(), prediction.max())
 
-        print(prediction.astype(int).mean(), prediction.astype(int).sum(), prediction.astype(int).max())
+        print((prediction > 0.5).astype(int).mean(), (prediction > 0.5).astype(int).sum(), (prediction > 0.5).astype(int).max())
         print(prediction.astype(np.uint32).mean(), prediction.astype(np.uint32).sum(), prediction.astype(np.uint32).max())
 
         # prediction = (prediction > 0.5)
