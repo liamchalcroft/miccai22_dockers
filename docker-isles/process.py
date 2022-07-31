@@ -221,6 +221,7 @@ class PLORAS():
         prediction = self.predict(input_data) # function you need to update!
 
         # Build the itk object.
+        print(prediction.mean(), prediction.sum(), prediction.max())
         output_image = SimpleITK.GetImageFromArray(prediction)
         print(SimpleITK.GetArrayFromImage(output_image).mean(), SimpleITK.GetArrayFromImage(output_image).sum(), SimpleITK.GetArrayFromImage(output_image).max())
         output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
