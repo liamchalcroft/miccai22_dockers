@@ -199,12 +199,13 @@ class PLORAS():
 
         prediction[prediction > 1] = 0
 
-        prediction = (prediction > 0.5)
+        # prediction = (prediction > 0.5)
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(int)
+        # return prediction.astype(int)
+        return prediction.astype(np.uint32)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
