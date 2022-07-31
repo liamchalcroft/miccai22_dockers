@@ -158,7 +158,8 @@ class PLORAS():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
                 print([p[-1].mean()for p in pred], [p[-1].sum() for p in pred], [p[-1].max() for p in pred])
-        pred = np.sum(np.stack(pred, axis=0), axis=0)
+        # pred = np.sum(np.stack(pred, axis=0), axis=0)
+        pred = pred[0]
         print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
@@ -212,7 +213,7 @@ class PLORAS():
         ################################################################################################################
 
         # return prediction.astype(int)
-        return prediction.astype(np.uint32)
+        return prediction
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
