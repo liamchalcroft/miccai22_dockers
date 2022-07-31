@@ -66,6 +66,7 @@ class PLORAS():
         self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
         self.models = [model.load_from_checkpoint(path, map_location=self.device) for model,path in zip(self.models, self.model_paths)]
         for model in self.models:
+            model.to(self.device)
             model.eval()
             model.freeze()
             model.model.training = False
