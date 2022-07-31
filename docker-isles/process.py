@@ -222,7 +222,9 @@ class PLORAS():
 
         # Build the itk object.
         output_image = SimpleITK.GetImageFromArray(prediction)
+        print(SimpleITK.GetArrayFromImage(output_image).mean(), SimpleITK.GetArrayFromImage(output_image).sum(), SimpleITK.GetArrayFromImage(output_image).max())
         output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
+        print(SimpleITK.GetArrayFromImage(output_image).mean(), SimpleITK.GetArrayFromImage(output_image).sum(), SimpleITK.GetArrayFromImage(output_image).max())
 
         # Write segmentation to output location.
         if not self._algorithm_output_path.exists():
