@@ -152,14 +152,13 @@ class PLORAS():
         # plt.show()
 
         pred = []
+        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+        img = img.permute(0,2,3,1)[None]
         with torch.no_grad():
-            img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-            img = img.permute(0,2,3,1)[None]
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
-                print([p[-1].mean()for p in pred], [p[-1].sum() for p in pred], [p[-1].max() for p in pred])
-        # pred = np.sum(np.stack(pred, axis=0), axis=0)
-        pred = pred[0]
+                print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
+        pred = np.sum(np.stack(pred, axis=0), axis=0)
         print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
@@ -179,17 +178,10 @@ class PLORAS():
 
         n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
 
-        # if not all(cropped_shape == pred.shape[1:]):
-        #     resized_pred = np.zeros((n_class, *cropped_shape))
-        #     for i in range(n_class):
-        #         resized_pred[i] = resize(
-        #             pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
-        #         )
-        #     pred = resized_pred
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = final_pred[1].astype(np.float32)
+        prediction = final_pred[1]
         print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction = SimpleITK.GetImageFromArray(prediction)
