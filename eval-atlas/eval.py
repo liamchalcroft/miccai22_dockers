@@ -200,14 +200,14 @@ class PLORAS():
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
         pred /= len(list(self.models))
 
-        img_crf = img[0].cpu().detach().numpy()
-        img_crf = img_crf - img_crf.min()
-        img_crf = 255 * (img_crf / img_crf.max())
-        img_crf[img_crf < 0] = 0
-        img_crf[img_crf > 255] = 255
-        img_crf = np.asarray(img_crf, np.uint8)
-        pred_crf = np.asarray(pred, np.float32)
-        pred = self.crf(img_crf, pred_crf)
+        # img_crf = img[0].cpu().detach().numpy()
+        # img_crf = img_crf - img_crf.min()
+        # img_crf = 255 * (img_crf / img_crf.max())
+        # img_crf[img_crf < 0] = 0
+        # img_crf[img_crf > 255] = 255
+        # img_crf = np.asarray(img_crf, np.uint8)
+        # pred_crf = np.asarray(pred, np.float32)
+        # pred = self.crf(img_crf, pred_crf)
 
         pred = np.transpose(pred, [0,3,1,2])
 
