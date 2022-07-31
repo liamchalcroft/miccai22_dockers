@@ -141,14 +141,12 @@ class PLORAS():
         # plt.show()
 
         pred = []
+        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+        img = img.permute(0,2,3,1)[None]
         with torch.no_grad():
-            img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-            img = img.permute(0,2,3,1)[None]
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
-                print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
-        pred = np.sum(np.stack(pred, axis=0), axis=0)
-        print(pred[1].mean(), pred[1].sum(), pred[1].max())
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
 
         # img_crf = img[0].cpu().detach().numpy()
         # img_crf = img_crf - img_crf.min()
@@ -167,18 +165,10 @@ class PLORAS():
 
         n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
 
-        # if not all(cropped_shape == pred.shape[1:]):
-        #     resized_pred = np.zeros((n_class, *cropped_shape))
-        #     for i in range(n_class):
-        #         resized_pred[i] = resize(
-        #             pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
-        #         )
-        #     pred = resized_pred
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = final_pred[1].astype(np.float32)
-        print(prediction.mean(), prediction.sum(), prediction.max())
+        prediction = final_pred[1]
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -187,15 +177,10 @@ class PLORAS():
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
-        print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction[prediction > 1] = 0
-        print(prediction.mean(), prediction.sum(), prediction.max())
 
-        #################################### End of your prediction method. ############################################
-        ################################################################################################################
-
-        return prediction.astype(np.float32)
+        prediction = (prediction > 0.5)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.

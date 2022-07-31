@@ -157,12 +157,7 @@ class PLORAS():
         with torch.no_grad():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
-                print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
-        # pred = np.mean(np.stack(pred, axis=0), axis=0)
-        pred = np.stack(pred, axis=0) > 0.5
-        pred = np.concatenate([np.zeros(pred.shape[1:])[None], pred], axis=0)
-        pred = np.argmax(pred, axis=0)
-        print(pred[1].mean(), pred[1].sum(), pred[1].max())
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
 
         # img_crf = img[0].cpu().detach().numpy()
         # img_crf = img_crf - img_crf.min()
@@ -185,8 +180,6 @@ class PLORAS():
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
         prediction = final_pred[1]
-        print(prediction.mean(), prediction.sum(), prediction.max())
-        print((prediction > 0.5).astype(int).mean(), (prediction > 0.5).astype(int).sum(), (prediction > 0.5).astype(int).max())
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -195,21 +188,15 @@ class PLORAS():
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
-        print(prediction.mean(), prediction.sum(), prediction.max())
 
-        prediction[prediction > 7] = 0
-        print(prediction.mean(), prediction.sum(), prediction.max())
+        prediction[prediction > 1] = 0
 
-        print((prediction > 0.5).astype(int).mean(), (prediction > 0.5).astype(int).sum(), (prediction > 0.5).astype(int).max())
-        print(prediction.astype(np.uint32).mean(), prediction.astype(np.uint32).sum(), prediction.astype(np.uint32).max())
-
-        # prediction = (prediction > 0.5)
+        prediction = (prediction > 0.5)
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        # return prediction.astype(int)
-        return prediction
+        return prediction.astype(int)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
