@@ -148,7 +148,18 @@ class PLORAS():
                     pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
                 else:
                     pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
+                print(pred[1].mean(), pred[1].sum(), pred[1].max())
         pred /= len(list(self.models))
+        print(pred[1].mean(), pred[1].sum(), pred[1].max())
+
+        # img_crf = img[0].cpu().detach().numpy()
+        # img_crf = img_crf - img_crf.min()
+        # img_crf = 255 * (img_crf / img_crf.max())
+        # img_crf[img_crf < 0] = 0
+        # img_crf[img_crf > 255] = 255
+        # img_crf = np.asarray(img_crf, np.uint8)
+        # pred_crf = np.asarray(pred, np.float32)
+        # pred = self.crf(img_crf, pred_crf)
 
         pred = np.transpose(pred, [0,3,1,2])
 
@@ -158,17 +169,18 @@ class PLORAS():
 
         n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
 
-        if not all(cropped_shape == pred.shape[1:]):
-            resized_pred = np.zeros((n_class, *cropped_shape))
-            for i in range(n_class):
-                resized_pred[i] = resize(
-                    pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
-                )
-            pred = resized_pred
+        # if not all(cropped_shape == pred.shape[1:]):
+        #     resized_pred = np.zeros((n_class, *cropped_shape))
+        #     for i in range(n_class):
+        #         resized_pred[i] = resize(
+        #             pred[i], cropped_shape, order=3, mode='edge', cval=0, clip=True, anti_aliasing=False
+        #         )
+        #     pred = resized_pred
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
         prediction = final_pred[1].astype(np.float32)
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -177,8 +189,10 @@ class PLORAS():
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         prediction[prediction > 1] = 0
+        print(prediction.mean(), prediction.sum(), prediction.max())
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################

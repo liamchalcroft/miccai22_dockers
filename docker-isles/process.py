@@ -196,6 +196,7 @@ class PLORAS():
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
 
+        prediction = self.reslice(prediction, reference=dwi_image_rs)
         prediction = self.reslice(prediction, reference=dwi_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
