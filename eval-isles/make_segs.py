@@ -18,6 +18,7 @@ import pyrobex
 from pyrobex.errors import PyRobexError
 import glob
 from tqdm import tqdm
+from scipy.special import softmax
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
 
