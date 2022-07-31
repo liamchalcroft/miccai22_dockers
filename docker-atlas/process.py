@@ -19,6 +19,7 @@ from pyrobex.errors import PyRobexError
 import subprocess
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
+from scipy.special import softmax
 
 def _find_robex_dir() -> str:
     """finds the ROBEX source code directory"""
@@ -183,16 +184,13 @@ class PLORAS():
         # plt.imshow(img[0,...,100])
         # plt.show()
 
-        pred = 0
+        pred = []
+        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+        img = img.permute(0,2,3,1)[None]
         with torch.no_grad():
-            img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-            img = img.permute(0,2,3,1)[None]
             for m in list(self.models):
-                if type(pred)==int:
-                    pred = m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-                else:
-                    pred +=  m._forward(img).softmax(dim=1)[0].cpu().detach().numpy()
-        pred /= len(list(self.models))
+                pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
 
         img_crf = img[0].cpu().detach().numpy()
         img_crf = img_crf - img_crf.min()
