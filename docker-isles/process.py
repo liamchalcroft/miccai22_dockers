@@ -158,7 +158,7 @@ class PLORAS():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
                 print(pred[-1].mean(), pred[-1].sum(), pred[-1].max())
-        pred = np.sum(np.stack(pred, axis=0), axis=0)
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
         print(pred[1].mean(), pred[1].sum(), pred[1].max())
 
         # img_crf = img[0].cpu().detach().numpy()
@@ -183,6 +183,7 @@ class PLORAS():
 
         prediction = final_pred[1]
         print(prediction.mean(), prediction.sum(), prediction.max())
+        print((prediction > 0.5).astype(int).mean(), (prediction > 0.5).astype(int).sum(), (prediction > 0.5).astype(int).max())
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
