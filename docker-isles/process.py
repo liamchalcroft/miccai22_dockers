@@ -45,7 +45,7 @@ class ploras():
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
         kwargs = {
-            'data':None, 'dim':3, 'learning_rate':1e-9, 
+            'data':'/data', 'dim':3, 'learning_rate':1e-9, 
             'brats':False, 'paste':0, 'focal':False, 
             'shape':False, 'exec_mode':'test', 'benchmark':False, 
             'filters':None, 'md_encoder':True, 'task':16, 
@@ -57,6 +57,7 @@ class ploras():
             }
 
         args = SimpleNamespace(**kwargs)
+        print(args.data)
 
         self.model_paths = [
             '/opt/algorithm/checkpoints/0/best.ckpt', '/opt/algorithm/checkpoints/1/best.ckpt', 
