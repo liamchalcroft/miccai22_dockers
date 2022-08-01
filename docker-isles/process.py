@@ -59,9 +59,9 @@ class ploras():
         args = SimpleNamespace(**kwargs)
 
         self.model_paths = [
-            'checkpoints/0/best.ckpt', 'checkpoints/1/best.ckpt', 
-            'checkpoints/2/best.ckpt', 'checkpoints/3/best.ckpt', 
-            'checkpoints/4/best.ckpt'
+            '/opt/algorithm/checkpoints/0/best.ckpt', '/opt/algorithm/checkpoints/1/best.ckpt', 
+            '/opt/algorithm/checkpoints/2/best.ckpt', '/opt/algorithm/checkpoints/3/best.ckpt', 
+            '/opt/algorithm/checkpoints/4/best.ckpt'
             ]
         self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
         self.models = [model.load_from_checkpoint(path, map_location=self.device) for model,path in zip(self.models, self.model_paths)]
