@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-RUN apt-get update && apt-get -y install git && apt-get -y install gcc
+RUN apt-get update && apt-get install --reinstall build-essential && apt-get -y install git && apt-get -y install gcc
 
 RUN groupadd -r algorithm && useradd -m --no-log-init -r -g algorithm algorithm
 
