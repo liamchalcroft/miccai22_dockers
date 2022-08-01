@@ -25,4 +25,6 @@ COPY --chown=algorithm:algorithm utils /opt/algorithm/utils
 COPY --chown=algorithm:algorithm checkpoints /opt/algorithm/checkpoints
 COPY --chown=algorithm:algorithm config /opt/algorithm/config
 
+COPY --chown=algorithm:algorithm test /opt/algorithm/test
+
 ENTRYPOINT python -m process $0 $@
