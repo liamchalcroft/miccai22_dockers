@@ -2,4 +2,4 @@
 
 ./build.sh
 
-docker save PLORAS | gzip -c > PLORAS.tar.gz
+docker save ploras | gzip -c > ploras.tar.gz

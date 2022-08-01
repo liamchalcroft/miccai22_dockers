@@ -1,4 +1,4 @@
-The source code for the algorithm container for PLORAS, generated with
+The source code for the algorithm container for ploras, generated with
 evalutils version 0.3.1.
 
 This repository contains a Docker generation example, in order to submit an algorithm to ISLES22 challenge.

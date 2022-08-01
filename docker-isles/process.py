@@ -19,7 +19,7 @@ from scipy.special import softmax
 
 
 # todo change with your team-name
-class PLORAS():
+class ploras():
     def __init__(self,
                  input_path: Path = DEFAULT_INPUT_PATH,
                  output_path: Path = DEFAULT_ALGORITHM_OUTPUT_IMAGES_PATH):
@@ -282,4 +282,4 @@ class PLORAS():
 
 if __name__ == "__main__":
     # todo change with your team-name
-    PLORAS().process()
+    ploras().process()
