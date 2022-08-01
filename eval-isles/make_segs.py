@@ -48,7 +48,7 @@ class ploras():
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        tta = False
+        tta = True
 
         args = SimpleNamespace(exec_mode='train', data='/data', 
                                 results='/results', config='config/config.pkl', logname='ploras', 
