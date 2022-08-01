@@ -1,6 +1,6 @@
 FROM python:3.9-slim
 
-RUN apt update && apt install git
+RUN apt-get update && apt-get -y install git
 
 RUN groupadd -r algorithm && useradd -m --no-log-init -r -g algorithm algorithm
 
