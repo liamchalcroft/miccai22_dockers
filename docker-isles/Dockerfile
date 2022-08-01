@@ -22,5 +22,7 @@ RUN python -m pip install --user -rrequirements.txt
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
 COPY --chown=algorithm:algorithm nnunet /opt/algorithm/nnunet
 COPY --chown=algorithm:algorithm utils /opt/algorithm/utils
+COPY --chown=algorithm:algorithm checkpoints /opt/algorithm/checkpoints
+COPY --chown=algorithm:algorithm config /opt/algorithm/config
 
 ENTRYPOINT python -m process $0 $@
