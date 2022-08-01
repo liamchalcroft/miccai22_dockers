@@ -201,7 +201,7 @@ class ploras():
 
         # Build the itk object.
         output_image = SimpleITK.GetImageFromArray(prediction)
-        # output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
+        output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
 
         # Write segmentation to output location.
         if not self._algorithm_output_path.exists():
