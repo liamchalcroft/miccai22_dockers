@@ -16,6 +16,7 @@ import argparse
 import tempfile
 import pyrobex
 from pyrobex.errors import PyRobexError
+from types import SimpleNamespace
 import glob
 from tqdm import tqdm
 from scipy.special import softmax
@@ -47,30 +48,33 @@ class ploras():
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        kwargs = {
-            'data':None, 'dim':3, 'learning_rate':1e-9, 
-            'brats':False, 'paste':0, 'focal':False, 
-            'shape':False, 'exec_mode':'test', 'benchmark':False, 
-            'filters':None, 'md_encoder':True, 'task':16, 
-            'min_fmap':4, 'tta':True, 'deep_supervision':True, 
-            'config':'config/config.pkl', 'depth':5, 'deep_supr_num':2,
-            'res_block':False, 'num_units':2, 'md_decoder':False,
-            'val_batch_size':1, 'overlap':0.5, 'blend':'gaussian',
-            'training':False
-            }
+        tta = True
 
-        parser = argparse.ArgumentParser()
-        for k, v in kwargs.items():
-            parser.add_argument('--' + k, default=v)
-        args = parser.parse_args()
+        args = SimpleNamespace(exec_mode='train', data='/data', 
+                                results='/results', config='config/config.pkl', logname='ploras', 
+                                task='15', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
+                                tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
+                                more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
+                                nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
+                                ckpt_store_dir='../docker-isles/checkpoints/', fold=0, patience=100, 
+                                batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=False, dim=3, 
+                                resume_training=False, num_workers=8, epochs=2000, warmup=5, norm='instance', nvol=4, depth=5, 
+                                min_fmap=4, deep_supr_num=2, res_block=False, filters=None, num_units=2, md_encoder=True, 
+                                md_decoder=False, shape=False, paste=0, data2d_dim=3, oversampling=0.4, overlap=0.5, 
+                                affinity='unique_contiguous', scheduler=False, optimizer='adam', blend='gaussian', 
+                                train_batches=0, test_batches=0)
 
         self.model_paths = [
             '../docker-isles/checkpoints/0/best.ckpt', '../docker-isles/checkpoints/1/best.ckpt', 
             '../docker-isles/checkpoints/2/best.ckpt', '../docker-isles/checkpoints/3/best.ckpt', 
             '../docker-isles/checkpoints/4/best.ckpt'
             ]
-        self.models = [NNUnet(args) for _ in self.model_paths]
-        self.models = [model.load_from_checkpoint(path, map_location=self.device) for model,path in zip(self.models, self.model_paths)]
+        for i,pth in enumerate(self.model_paths):
+            ckpt = torch.load(pth, map_location=self.device)
+            ckpt['hyper_parameters']['args'] = args
+            ckpt['hyper_parameters']['args'].ckpt_store_dir += str(i)
+            torch.save(ckpt, pth)
+        self.models = [NNUnet.load_from_checkpoint(path, map_location=self.device) for path in self.model_paths]
         for model in self.models:
             model.to(self.device)
             model.eval()
@@ -138,10 +142,6 @@ class ploras():
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
         meta = np.vstack([bbox, orig_shape, img.shape[1:]])
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(img[0,...,100])
-        # plt.show()
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
@@ -183,10 +183,12 @@ class ploras():
 
         prediction[prediction > 1] = 0
 
+        prediction = (prediction > 0.5)
+
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(np.float32)
+        return prediction.astype(int)
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
