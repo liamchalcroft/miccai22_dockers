@@ -70,9 +70,7 @@ class ploras():
             ckpt['hyper_parameters']['args'] = args
             ckpt['hyper_parameters']['args'].ckpt_store_dir += str(i)
             torch.save(ckpt, pth)
-         
-        self.models = [NNUnet(args).to(self.device) for _ in self.model_paths]
-        self.models = [model.load_from_checkpoint(path, map_location=self.device) for model,path in zip(self.models, self.model_paths)]
+        self.models = [NNUnet.load_from_checkpoint(path, map_location=self.device) for path in self.model_paths]
         for model in self.models:
             model.to(self.device)
             model.eval()
