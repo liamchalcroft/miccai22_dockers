@@ -27,7 +27,7 @@ class ploras():
                  input_path: Path = DEFAULT_INPUT_PATH,
                  output_path: Path = DEFAULT_ALGORITHM_OUTPUT_IMAGES_PATH):
 
-        self.debug = True  # False for running the docker!
+        self.debug = False  # False for running the docker!
         if self.debug:
             self._input_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/test/')
             self._output_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/output/')

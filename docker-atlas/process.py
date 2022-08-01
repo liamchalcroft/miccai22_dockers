@@ -65,7 +65,7 @@ class ploras():
 
         args = SimpleNamespace(exec_mode='train', data='/data', 
                                 results='/results', config='/opt/algorithm/config/config.pkl', logname='ploras', 
-                                task='15', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
+                                task='16', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
                                 tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
                                 nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
