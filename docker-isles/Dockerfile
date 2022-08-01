@@ -16,6 +16,8 @@ ENV PATH="/home/algorithm/.local/bin:${PATH}"
 
 RUN python -m pip install --user -U pip
 
+RUN ["pip", "install", "-e", "."]
+
 
 
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
