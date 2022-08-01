@@ -255,8 +255,6 @@ class ploras():
         adc_json_path = self.get_file_path(slug='adc-mri-parameters', filetype='json')
         flair_json_path = self.get_file_path(slug='flair-mri-acquisition-parameters', filetype='json')
 
-        print(dwi_image_path)
-
         input_data = {'dwi_image': SimpleITK.ReadImage(str(dwi_image_path)), 'dwi_json': json.load(open(dwi_json_path)),
                       'adc_image': SimpleITK.ReadImage(str(adc_image_path)), 'adc_json': json.load(open(adc_json_path)),
                       'flair_image': SimpleITK.ReadImage(str(flair_image_path)), 'flair_json': json.load(open(flair_json_path))}
@@ -272,6 +270,9 @@ class ploras():
             file_list = list((self._input_path / "images" / slug).glob("*.mha"))
         elif filetype == 'json':
             file_list = list(self._input_path.glob("*{}.json".format(slug)))
+
+        print(self._input_path)
+        print(os.listdir(self._input_path))
 
         # Check that there is a single file to load.
         if len(file_list) != 1:
