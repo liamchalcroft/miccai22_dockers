@@ -48,7 +48,7 @@ class ploras():
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        tta = True
+        tta = False
 
         args = SimpleNamespace(exec_mode='train', data='/data', 
                                 results='/results', config='config/config.pkl', logname='ploras', 
@@ -183,12 +183,13 @@ class ploras():
 
         prediction[prediction > 1] = 0
 
-        prediction = (prediction > 0.5)
+        # prediction = (prediction > 0.5)
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
-        return prediction.astype(int)
+        # return prediction.astype(int)
+        return prediction
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
