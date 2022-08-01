@@ -231,9 +231,12 @@ class ploras():
         prediction = final_pred[1].astype(np.float32)
 
         prediction = SimpleITK.GetImageFromArray(prediction)
-        prediction.SetOrigin(t1w_image_n4ss.GetOrigin()), prediction.SetSpacing(t1w_image_n4ss.GetSpacing()), prediction.SetDirection(t1w_image_n4ss.GetDirection())
+        if self.preprocessed:
+            prediction.SetOrigin(t1w_image.GetOrigin()), prediction.SetSpacing(t1w_image.GetSpacing()), prediction.SetDirection(t1w_image.GetDirection())
+        else:
+            prediction.SetOrigin(t1w_image_n4ss.GetOrigin()), prediction.SetSpacing(t1w_image_n4ss.GetSpacing()), prediction.SetDirection(t1w_image_n4ss.GetDirection())
 
-        prediction = self.reslice(prediction, reference=t1w_image)
+            prediction = self.reslice(prediction, reference=t1w_image)
 
         prediction = SimpleITK.GetArrayFromImage(prediction)
 
