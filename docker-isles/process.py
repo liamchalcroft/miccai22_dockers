@@ -148,7 +148,7 @@ class ploras():
         adc_image_data = SimpleITK.GetArrayFromImage(adc_image_1mm)
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_1mm)
 
-        img = np.stack([dwi_image_data, adc_image_data, flair_image_data])
+        img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
 
         img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
         orig_shape = img.shape[1:]
