@@ -33,12 +33,16 @@ def get_task_code(args):
 
 def get_config_file(args):
     if args.config:
+        print(1)
         path = args.config
     elif args.data != "/data":
+        print(2)
         path = os.path.join(args.data, "config.pkl")
     else:
+        print(3)
         task_code = get_task_code(args)
         path = os.path.join(args.data, task_code, "config.pkl")
+    print(path, args.config, args.data)
     return pickle.load(open(path, "rb"))
 
 
