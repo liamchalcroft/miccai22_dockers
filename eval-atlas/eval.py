@@ -255,7 +255,6 @@ class ploras():
 
         # Build the itk object.
         output_image = SimpleITK.GetImageFromArray(prediction)
-#        output_image = SimpleITK.Cast(output_image, SimpleITK.sitkInt8)
         output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
 
         # Write segmentation to output location.
@@ -292,16 +291,12 @@ class ploras():
         preproc_path = str(t1w_image_path).split('/')
         preproc_path[-1] = 'n4_stripped.nii.gz'
         preproc_path = '/'.join(preproc_path)
-        # if os.path.exists(preproc_path):
-        #     input_data = {'t1w_image': SimpleITK.ReadImage(str(preproc_path))}
-        #     self.preprocessed = True
-        # else:
-        #     input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
-        #     self.preprocessed = False
-
-        # force to run new pre-processing. want to make sure output matches competition
-        input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
-        self.preprocessed = False
+        if os.path.exists(preproc_path):
+            input_data = {'t1w_image': SimpleITK.ReadImage(str(preproc_path))}
+            self.preprocessed = True
+        else:
+            input_data = {'t1w_image': SimpleITK.ReadImage(str(t1w_image_path))}
+            self.preprocessed = False
 
         # Set input information.
         input_filename = str(t1w_image_path).split('/')[-1]
