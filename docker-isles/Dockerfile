@@ -10,11 +10,15 @@ RUN mkdir -p /opt/algorithm /input /output \
 
 USER algorithm
 
+RUN ls
+
 WORKDIR /opt/algorithm
 
 ENV PATH="/home/algorithm/.local/bin:${PATH}"
 
 RUN python -m pip install --user -U pip
+
+RUN ls
 
 RUN ["pip", "install", "-e", "."]
 
