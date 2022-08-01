@@ -15,7 +15,6 @@ import torch
 from nnunet.nn_unet import NNUnet
 import monai
 from skimage.transform import resize
-# import argparse
 from types import SimpleNamespace
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
@@ -57,14 +56,7 @@ class ploras():
             'training':False
             }
 
-        # parser = argparse.ArgumentParser()
-        # for k, v in kwargs.items():
-        #     parser.add_argument('--' + k, default=v)
-        # args = parser.parse_args()
-
         args = SimpleNamespace(**kwargs)
-
-        print(args)
 
         self.model_paths = [
             'checkpoints/0/best.ckpt', 'checkpoints/1/best.ckpt', 

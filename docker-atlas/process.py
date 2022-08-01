@@ -12,7 +12,7 @@ import torch
 from nnunet.nn_unet import NNUnet
 import monai
 from skimage.transform import resize
-import argparse
+from types import SimpleNamespace
 import tempfile
 import pyrobex
 from pyrobex.errors import PyRobexError
@@ -73,10 +73,7 @@ class ploras():
             'training':False
             }
 
-        parser = argparse.ArgumentParser()
-        for k, v in kwargs.items():
-            parser.add_argument('--' + k, default=v)
-        args = parser.parse_args()
+        args = SimpleNamespace(**kwargs)
 
         self.model_paths = [
             'checkpoints/0/best.ckpt', 'checkpoints/1/best.ckpt', 
