@@ -10,8 +10,6 @@ RUN mkdir -p /opt/algorithm /input /output \
 
 USER algorithm
 
-ADD /nnunet /nnunet
-
 WORKDIR /opt/algorithm
 
 ENV PATH="/home/algorithm/.local/bin:${PATH}"
@@ -21,8 +19,8 @@ RUN python -m pip install --user -U pip
 
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
 RUN python -m pip install --user -rrequirements.txt
-RUN pip install -e nnunet
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
+COPY --chown=algorithm:algorithm nnunet /opt/algorithm/nnunet
 
 ENTRYPOINT python -m process $0 $@
