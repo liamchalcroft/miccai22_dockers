@@ -1,5 +1,6 @@
 
 evalutils==0.3.1
+setuptools
 
 scikit-learn==0.24.2
 scipy
