@@ -171,6 +171,7 @@ class NNUnet(pl.LightningModule):
         return config["in_channels"], config["n_class"], kernels, strides, patch_size
 
     def build_nnunet(self):
+        print(self.args)
         in_channels, out_channels, kernels, strides, self.patch_size = self.get_unet_params()
         self.n_class = out_channels - 1
         if self.args.brats:
