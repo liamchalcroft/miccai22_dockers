@@ -10,22 +10,16 @@ RUN mkdir -p /opt/algorithm /input /output \
 
 USER algorithm
 
-RUN ls
-
 WORKDIR /opt/algorithm
 
 ENV PATH="/home/algorithm/.local/bin:${PATH}"
 
 RUN python -m pip install --user -U pip
 
-RUN ls
-
-RUN ["pip", "install", "-e", "."]
-
-
 
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
 RUN python -m pip install --user -rrequirements.txt
+RUN pip install -e .
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
 
