@@ -33,7 +33,7 @@ from copy import deepcopy
 import shutil
 
 import logging
-logging.getLogger('lightning').setLevel(0)
+logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
 
