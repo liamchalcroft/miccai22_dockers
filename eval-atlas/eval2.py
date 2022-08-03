@@ -194,7 +194,7 @@ class ploras():
         }
         with open('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/ATLAS2022_ss/dataset.json', 'w') as f:
             json.dump(data_desc, f)
-        args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', results='/home/lchalcroft/mdunet/data', exec_mode='test',
+        args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', results='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', exec_mode='test',
                                 ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
         Preprocessor(args).run()
 
