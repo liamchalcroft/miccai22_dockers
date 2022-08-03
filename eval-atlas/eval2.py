@@ -106,7 +106,6 @@ class ploras():
             ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
-            print([args_.ckpt_path for args_ in self.args])
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
