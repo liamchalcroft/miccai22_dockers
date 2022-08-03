@@ -95,11 +95,11 @@ def get_kfold_splitter(nfolds):
 def get_test_fnames(args, data_path, meta=None):
     kfold = get_kfold_splitter(args.nfolds)
     test_imgs = load_data(data_path, "*_x.npy", non_empty=False)
-    if args.exec_mode == "predict" and "val" in data_path:
-        _, val_idx = list(kfold.split(test_imgs))[args.fold]
-        test_imgs = sorted(get_split(test_imgs, val_idx))
-        if meta is not None:
-            meta = sorted(get_split(meta, val_idx))
+    # if args.exec_mode == "predict" and "val" in data_path:
+    #     _, val_idx = list(kfold.split(test_imgs))[args.fold]
+    #     test_imgs = sorted(get_split(test_imgs, val_idx))
+    #     if meta is not None:
+    #         meta = sorted(get_split(meta, val_idx))
     return test_imgs, meta
 
 
