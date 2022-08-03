@@ -29,6 +29,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary, RichProgressBar
 from utils.utils import make_empty_dir, set_cuda_devices, set_granularity, verify_ckpt_path
 from data_loading.data_module import DataModule
+from copy import deepcopy
 
 
 
@@ -98,15 +99,14 @@ class ploras():
         self.args = []
         for i,pth in enumerate(self.model_paths):
             ckpt = torch.load(pth, map_location=self.device)
-            ckpt['hyper_parameters']['args'] = args
+            ckpt['hyper_parameters']['args'] = deepcopy(args)
             ckpt['hyper_parameters']['args'].ckpt_store_dir = '../docker-atlas/checkpoints/' + str(i)
             ckpt['hyper_parameters']['args'].ckpt_path = '../docker-atlas/checkpoints/' + str(i) + '/best.ckpt'
             ckpt['hyper_parameters']['args'].fold = i
             ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
-            print(ckpt['hyper_parameters']['args'].ckpt_path)
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
-            print(self.args[-1].ckpt_path)
+            print([args_.ckpt_path for args_ in self.args])
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
