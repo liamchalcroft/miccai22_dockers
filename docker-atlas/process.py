@@ -179,8 +179,9 @@ class ploras():
 
         t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image_n4ss)
         img = t1w_image_data[None]
+        img = np.transpose(img, (0,3,2,1))
 
-        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
+        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
         orig_shape = img.shape[1:]
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
@@ -192,7 +193,6 @@ class ploras():
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        img = img.permute(0,2,3,1)[None]
         with torch.no_grad():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
@@ -206,8 +206,6 @@ class ploras():
         img_crf = np.asarray(img_crf, np.uint8)
         pred_crf = np.asarray(pred, np.float32)
         pred = self.crf(img_crf, pred_crf)
-
-        pred = np.transpose(pred, [0,3,1,2])
 
         min_d, max_d = meta[0,0], meta[1,0]
         min_h, max_h = meta[0,1], meta[1,1]
@@ -225,7 +223,8 @@ class ploras():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        prediction = final_pred[1].astype(np.float32)
+        final_pred = np.transpose(final_pred, (0,3,2,1))
+        prediction = final_pred[1]
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(t1w_image_n4ss.GetOrigin()), prediction.SetSpacing(t1w_image_n4ss.GetSpacing()), prediction.SetDirection(t1w_image_n4ss.GetDirection())

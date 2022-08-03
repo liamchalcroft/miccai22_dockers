@@ -229,7 +229,7 @@ class ploras():
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
         final_pred = np.transpose(final_pred, (0,3,2,1))
-        prediction = final_pred[1].astype(np.float32)
+        prediction = final_pred[1]
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         if self.preprocessed:

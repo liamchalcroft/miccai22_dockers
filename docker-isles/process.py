@@ -149,8 +149,9 @@ class ploras():
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_1mm)
 
         img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
+        img = np.transpose(img, (0,3,2,1))
 
-        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
+        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
         orig_shape = img.shape[1:]
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
@@ -158,7 +159,7 @@ class ploras():
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        img = img.permute(0,2,3,1)[None]
+        img = img[None]
         with torch.no_grad():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
@@ -173,8 +174,6 @@ class ploras():
         # pred_crf = np.asarray(pred, np.float32)
         # pred = self.crf(img_crf, pred_crf)
 
-        pred = np.transpose(pred, [0,3,1,2])
-
         min_d, max_d = meta[0,0], meta[1,0]
         min_h, max_h = meta[0,1], meta[1,1]
         min_w, max_w = meta[0,2], meta[1,2]
@@ -184,6 +183,7 @@ class ploras():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
+        final_pred = np.transpose(final_pred, (0,3,2,1))
         prediction = final_pred[1]
 
         prediction = SimpleITK.GetImageFromArray(prediction)
