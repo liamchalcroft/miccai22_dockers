@@ -186,21 +186,19 @@ class ploras():
         else:
             t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image)
 
+        print(t1w_image_data.shape)
+
         img = t1w_image_data[None]
+        img = np.transpose(img, (0,3,2,1))
 
         img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
         orig_shape = img.shape[1:]
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
         meta = np.vstack([bbox, orig_shape, img.shape[1:]])
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(img[0,...,100])
-        # plt.show()
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        img = img.permute(0,2,3,1)[None]
         with torch.no_grad():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
@@ -214,8 +212,6 @@ class ploras():
         # img_crf = np.asarray(img_crf, np.uint8)
         # pred_crf = np.asarray(pred, np.float32)
         # pred = self.crf(img_crf, pred_crf)
-
-        pred = np.transpose(pred, [0,3,1,2])
 
         min_d, max_d = meta[0,0], meta[1,0]
         min_h, max_h = meta[0,1], meta[1,1]
@@ -233,7 +229,9 @@ class ploras():
         final_pred = np.zeros((n_class, *original_shape))
         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
+        final_pred = np.transpose(final_pred, (0,3,2,1))
         prediction = final_pred[1].astype(np.float32)
+        print(prediction.shape)
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         if self.preprocessed:
