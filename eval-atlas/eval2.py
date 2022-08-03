@@ -270,7 +270,6 @@ class ploras():
             self.nnunet_preprocess(t1w_image)
 
         for args_ in self.args:
-            print(args_.ckpt_path)
             self.nnunet_infer(args_)
 
         paths = [os.path.join('/home/lchalcroft/mdunet/prediction',i,'aaa.npy') for i in range(len(self.args))]
