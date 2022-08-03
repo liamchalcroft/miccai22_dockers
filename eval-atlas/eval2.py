@@ -106,6 +106,8 @@ class ploras():
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
 
+        print(self.args)
+
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
             dims = image.GetDimension()
