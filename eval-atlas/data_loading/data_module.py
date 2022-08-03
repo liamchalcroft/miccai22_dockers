@@ -63,7 +63,7 @@ class DataModule(LightningDataModule):
             self.val_imgs, self.val_lbls = get_split(imgs, val_idx), get_split(lbls, val_idx)
         else:
             self.kwargs.update({"meta": test_meta})
-        print0(f"{len(self.train_imgs)} training, {len(self.val_imgs)} validation, {len(self.test_imgs)} test examples")
+        # print0(f"{len(self.train_imgs)} training, {len(self.val_imgs)} validation, {len(self.test_imgs)} test examples")
 
     def train_dataloader(self):
         return fetch_dali_loader(self.train_imgs, self.train_lbls, self.args.batch_size, "train", **self.kwargs)

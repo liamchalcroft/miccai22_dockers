@@ -56,7 +56,7 @@ class Preprocessor:
 
     def run(self):
         make_empty_dir(self.results)
-        print(f"Preprocessing {self.data_path}")
+        # print(f"Preprocessing {self.data_path}")
         try:
             self.target_spacing = spacings[self.task_code]
         except:
