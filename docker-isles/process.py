@@ -155,10 +155,6 @@ class ploras():
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
         meta = np.vstack([bbox, orig_shape, img.shape[1:]])
-        # import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.imshow(img[0,...,100])
-        # plt.show()
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
@@ -217,11 +213,8 @@ class ploras():
         prediction = self.predict(input_data) # function you need to update!
 
         # Build the itk object.
-        print(prediction.mean(), prediction.sum(), prediction.max())
         output_image = SimpleITK.GetImageFromArray(prediction)
-        print(SimpleITK.GetArrayFromImage(output_image).mean(), SimpleITK.GetArrayFromImage(output_image).sum(), SimpleITK.GetArrayFromImage(output_image).max())
         output_image.SetOrigin(origin), output_image.SetSpacing(spacing), output_image.SetDirection(direction)
-        print(SimpleITK.GetArrayFromImage(output_image).mean(), SimpleITK.GetArrayFromImage(output_image).sum(), SimpleITK.GetArrayFromImage(output_image).max())
 
         # Write segmentation to output location.
         if not self._algorithm_output_path.exists():
