@@ -82,7 +82,7 @@ class ploras():
                                 task='16', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
                                 tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
-                                nfolds=1, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
+                                nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
                                 ckpt_store_dir='../docker-atlas/checkpoints/', fold=0, patience=100, 
                                 batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=True, dim=3, 
                                 resume_training=False, num_workers=8, epochs=2000, warmup=5, norm='instance', nvol=4, depth=5, 
@@ -102,7 +102,7 @@ class ploras():
             ckpt['hyper_parameters']['args'] = deepcopy(args)
             ckpt['hyper_parameters']['args'].ckpt_store_dir = '../docker-atlas/checkpoints/' + str(i)
             ckpt['hyper_parameters']['args'].ckpt_path = '../docker-atlas/checkpoints/' + str(i) + '/best.ckpt'
-            # ckpt['hyper_parameters']['args'].fold = i
+            ckpt['hyper_parameters']['args'].fold = i
             ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
