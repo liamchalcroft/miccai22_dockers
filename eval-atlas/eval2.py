@@ -30,6 +30,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary, RichProgr
 from utils.utils import make_empty_dir, set_cuda_devices, set_granularity, verify_ckpt_path
 from data_loading.data_module import DataModule
 from copy import deepcopy
+from IPython.utils import io
 
 
 
@@ -80,7 +81,7 @@ class ploras():
         args = SimpleNamespace(exec_mode='predict', data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/16_3d/test', 
                                 results='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results', config='../docker-atlas/config/config.pkl', logname='ploras', 
                                 task='16', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
-                                tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
+                                tta=tta, tb_logs=False, wandb_logs=False, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
                                 nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
                                 ckpt_store_dir='../docker-atlas/checkpoints/', fold=0, patience=100, 
@@ -195,7 +196,8 @@ class ploras():
             json.dump(data_desc, f)
         args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', results='/home/lchalcroft/mdunet/data', exec_mode='test',
                                 ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
-        Preprocessor(args).run()
+        with io.capture_output() as captured:
+            Preprocessor(args).run()
 
     def nnunet_infer(self, args):
         data_module = DataModule(args)
@@ -231,7 +233,8 @@ class ploras():
         model.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         model.args = args
-        trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
+        with io.capture_output() as captured:
+            trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
 
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
@@ -246,7 +249,7 @@ class ploras():
     def cleanup(self):
         os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data')
         os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results')
-        os.removerdirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction')
+        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction')
 
     def predict(self, input_data):
         """
@@ -301,6 +304,8 @@ class ploras():
         prediction = SimpleITK.GetArrayFromImage(prediction)
 
         prediction = (prediction > 0.5)
+
+        self.cleanup()
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################
