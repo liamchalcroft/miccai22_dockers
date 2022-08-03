@@ -207,7 +207,7 @@ class ploras():
         trainer = Trainer(
             logger=logger,
             default_root_dir=args.results,
-            benchmark=False,
+            benchmark=True,
             deterministic=False,
             max_epochs=args.epochs,
             precision=16 if args.amp else 32,
@@ -224,6 +224,8 @@ class ploras():
             limit_val_batches=1.0 if args.test_batches == 0 else args.test_batches,
             limit_test_batches=1.0 if args.test_batches == 0 else args.test_batches,
             check_val_every_n_epoch=args.val_epochs,
+            enable_progress_bar=False,
+            enable_model_summary=False,
         )
         save_dir = os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction', str(args.fold))
         model.save_dir = save_dir
