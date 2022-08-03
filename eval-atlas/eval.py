@@ -94,6 +94,7 @@ class ploras():
             torch.save(ckpt, pth)
         self.models = [NNUnet.load_from_checkpoint(path, map_location=self.device) for path in self.model_paths]
         for model in self.models:
+            model.args = args
             model.to(self.device)
             model.eval()
             model.freeze()
@@ -187,7 +188,7 @@ class ploras():
 
         img = t1w_image_data[None]
 
-        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
+        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
         orig_shape = img.shape[1:]
         bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
         img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
