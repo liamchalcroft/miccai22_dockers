@@ -19,19 +19,19 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 # from apex.optimizers import FusedAdam, FusedSGD
-# from data_loading.data_module import get_data_path, get_test_fnames
+from data_loading.data_module import get_data_path, get_test_fnames
 from monai.inferers import sliding_window_inference
 # from monai.networks.nets import DynUNet
 from nnunet.model import MDUNet as DynUNet
-# from monai.optimizers.lr_scheduler import WarmupCosineSchedule
-# from pytorch_lightning.utilities import rank_zero_only
-# from scipy.special import expit, softmax
-# from skimage.transform import resize
-# from utils.logger import DLLogger
+from monai.optimizers.lr_scheduler import WarmupCosineSchedule
+from pytorch_lightning.utilities import rank_zero_only
+from scipy.special import expit, softmax
+from skimage.transform import resize
+from utils.logger import DLLogger
 from utils.utils import get_config_file, print0
 
-# from nnunet.loss import Loss, LossBraTS
-# from nnunet.metrics import Dice
+from nnunet.loss import Loss, LossBraTS
+from nnunet.metrics import Dice
 
 
 class NNUnet(pl.LightningModule):
@@ -78,75 +78,75 @@ class NNUnet(pl.LightningModule):
             return self.model(img)
         return self.tta_inference(img) if self.args.tta else self.do_inference(img)
 
-    # def compute_loss(self, preds, label):
-    #     if self.args.deep_supervision:
-    #         loss, weights = 0.0, 0.0
-    #         for i in range(preds.shape[1]):
-    #             loss += self.loss(preds[:, i], label) * 0.5 ** i
-    #             weights += 0.5 ** i
-    #         return loss / weights
-    #     return self.loss(preds, label)
+    def compute_loss(self, preds, label):
+        if self.args.deep_supervision:
+            loss, weights = 0.0, 0.0
+            for i in range(preds.shape[1]):
+                loss += self.loss(preds[:, i], label) * 0.5 ** i
+                weights += 0.5 ** i
+            return loss / weights
+        return self.loss(preds, label)
 
-    # def training_step(self, batch, batch_idx):
-    #     img, lbl = self.get_train_data(batch)
-    #     pred = self.model(img)
-    #     loss = self.compute_loss(pred, lbl)
-    #     self.log('train/loss', loss)
-    #     return loss
+    def training_step(self, batch, batch_idx):
+        img, lbl = self.get_train_data(batch)
+        pred = self.model(img)
+        loss = self.compute_loss(pred, lbl)
+        self.log('train/loss', loss)
+        return loss
 
-    # def lesion_paste(self, img, lbl):
-    #     if torch.rand(1).item() < self.args.paste:
-    #         lbl_type = lbl.dtype
-    #         self.kernel = self.kernel.to(img.device)
-    #         self.kernel = self.kernel.to(img.dtype)
-    #         lbl = lbl.to(img.dtype)
-    #         # add line to modify mask with soft boundaries
-    #         mask = lbl
-    #         mask = torch.nn.functional.conv3d(mask, self.kernel, padding=1)
-    #         ix = torch.randperm(lbl.shape[0])
-    #         img = img * (1-mask[ix]) + img[ix] * mask[ix]
-    #         lbl = ((lbl * (1-mask[ix]) + lbl[ix] * mask[ix]) > 0.5).to(lbl.dtype)
-    #         del mask, ix
-    #         lbl = lbl.to(lbl_type)
-    #     return img, lbl
+    def lesion_paste(self, img, lbl):
+        if torch.rand(1).item() < self.args.paste:
+            lbl_type = lbl.dtype
+            self.kernel = self.kernel.to(img.device)
+            self.kernel = self.kernel.to(img.dtype)
+            lbl = lbl.to(img.dtype)
+            # add line to modify mask with soft boundaries
+            mask = lbl
+            mask = torch.nn.functional.conv3d(mask, self.kernel, padding=1)
+            ix = torch.randperm(lbl.shape[0])
+            img = img * (1-mask[ix]) + img[ix] * mask[ix]
+            lbl = ((lbl * (1-mask[ix]) + lbl[ix] * mask[ix]) > 0.5).to(lbl.dtype)
+            del mask, ix
+            lbl = lbl.to(lbl_type)
+        return img, lbl
 
-    # def validation_step(self, batch, batch_idx):
-    #     if self.current_epoch < self.args.skip_first_n_eval:
-    #         return None
-    #     img, lbl = batch["image"], batch["label"]
-    #     pred = self._forward(img)
-    #     loss = self.loss(pred, lbl)
-    #     if self.args.invert_resampled_y:
-    #         meta, lbl = batch["meta"][0].cpu().detach().numpy(), batch["orig_lbl"]
-    #         pred = nn.functional.interpolate(pred, size=tuple(meta[3]), mode="trilinear", align_corners=True)
-    #     self.dice.update(pred, lbl[:, 0], loss)
+    def validation_step(self, batch, batch_idx):
+        if self.current_epoch < self.args.skip_first_n_eval:
+            return None
+        img, lbl = batch["image"], batch["label"]
+        pred = self._forward(img)
+        loss = self.loss(pred, lbl)
+        if self.args.invert_resampled_y:
+            meta, lbl = batch["meta"][0].cpu().detach().numpy(), batch["orig_lbl"]
+            pred = nn.functional.interpolate(pred, size=tuple(meta[3]), mode="trilinear", align_corners=True)
+        self.dice.update(pred, lbl[:, 0], loss)
 
-    # def test_step(self, batch, batch_idx):
-    #     if self.args.exec_mode == "evaluate":
-    #         return self.validation_step(batch, batch_idx)
-    #     img = batch["image"]
-    #     pred = self._forward(img).squeeze(0).cpu().detach().numpy()
-    #     if self.args.save_preds:
-    #         meta = batch["meta"][0].cpu().detach().numpy()
-    #         min_d, max_d = meta[0, 0], meta[1, 0]
-    #         min_h, max_h = meta[0, 1], meta[1, 1]
-    #         min_w, max_w = meta[0, 2], meta[1, 2]
-    #         n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
-    #         if not all(cropped_shape == pred.shape[1:]):
-    #             resized_pred = np.zeros((n_class, *cropped_shape))
-    #             for i in range(n_class):
-    #                 resized_pred[i] = resize(
-    #                     pred[i], cropped_shape, order=3, mode="edge", cval=0, clip=True, anti_aliasing=False
-    #                 )
-    #             pred = resized_pred
-    #         final_pred = np.zeros((n_class, *original_shape))
-    #         final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
-    #         if self.args.brats:
-    #             final_pred = expit(final_pred)
-    #         else:
-    #             final_pred = softmax(final_pred, axis=0)
+    def test_step(self, batch, batch_idx):
+        if self.args.exec_mode == "evaluate":
+            return self.validation_step(batch, batch_idx)
+        img = batch["image"]
+        pred = self._forward(img).squeeze(0).cpu().detach().numpy()
+        if self.args.save_preds:
+            meta = batch["meta"][0].cpu().detach().numpy()
+            min_d, max_d = meta[0, 0], meta[1, 0]
+            min_h, max_h = meta[0, 1], meta[1, 1]
+            min_w, max_w = meta[0, 2], meta[1, 2]
+            n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
+            if not all(cropped_shape == pred.shape[1:]):
+                resized_pred = np.zeros((n_class, *cropped_shape))
+                for i in range(n_class):
+                    resized_pred[i] = resize(
+                        pred[i], cropped_shape, order=3, mode="edge", cval=0, clip=True, anti_aliasing=False
+                    )
+                pred = resized_pred
+            final_pred = np.zeros((n_class, *original_shape))
+            final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
+            if self.args.brats:
+                final_pred = expit(final_pred)
+            else:
+                final_pred = softmax(final_pred, axis=0)
 
-    #         self.save_mask(final_pred)
+            self.save_mask(final_pred)
 
     def get_unet_params(self):
         config = get_config_file(self.args)
@@ -273,49 +273,49 @@ class NNUnet(pl.LightningModule):
         if self.args.exec_mode == "evaluate":
             self.eval_dice, _ = self.dice.compute()
 
-    # @rank_zero_only
-    # def on_fit_end(self):
-    #     if not self.args.benchmark:
-    #         metrics = {}
-    #         metrics["dice_score"] = round(self.best_mean.item(), 2)
-    #         metrics["Epoch"] = self.best_epoch
-    #         self.dllogger.log_metrics(step=(), metrics=metrics)
-    #         self.dllogger.flush()
+    @rank_zero_only
+    def on_fit_end(self):
+        if not self.args.benchmark:
+            metrics = {}
+            metrics["dice_score"] = round(self.best_mean.item(), 2)
+            metrics["Epoch"] = self.best_epoch
+            self.dllogger.log_metrics(step=(), metrics=metrics)
+            self.dllogger.flush()
 
-    # def configure_optimizers(self):
-    #     optimizer = {
-    #         "sgd": FusedSGD(self.parameters(), lr=self.learning_rate, momentum=self.args.momentum),
-    #         "adam": FusedAdam(self.parameters(), lr=self.learning_rate, weight_decay=self.args.weight_decay),
-    #     }[self.args.optimizer.lower()]
+    def configure_optimizers(self):
+        optimizer = {
+            "sgd": FusedSGD(self.parameters(), lr=self.learning_rate, momentum=self.args.momentum),
+            "adam": FusedAdam(self.parameters(), lr=self.learning_rate, weight_decay=self.args.weight_decay),
+        }[self.args.optimizer.lower()]
 
-    #     if self.args.scheduler:
-    #         scheduler = {
-    #             "scheduler": WarmupCosineSchedule(
-    #                 optimizer=optimizer,
-    #                 warmup_steps=250,
-    #                 t_total=self.args.epochs * len(self.trainer.datamodule.train_dataloader()),
-    #             ),
-    #             "interval": "step",
-    #             "frequency": 1,
-    #         }
-    #         return {"optimizer": optimizer, "monitor": "val_loss", "lr_scheduler": scheduler}
-    #     return {"optimizer": optimizer, "monitor": "val_loss"}
+        if self.args.scheduler:
+            scheduler = {
+                "scheduler": WarmupCosineSchedule(
+                    optimizer=optimizer,
+                    warmup_steps=250,
+                    t_total=self.args.epochs * len(self.trainer.datamodule.train_dataloader()),
+                ),
+                "interval": "step",
+                "frequency": 1,
+            }
+            return {"optimizer": optimizer, "monitor": "val_loss", "lr_scheduler": scheduler}
+        return {"optimizer": optimizer, "monitor": "val_loss"}
 
-    # def save_mask(self, pred):
-    #     if self.test_idx == 0:
-    #         data_path = get_data_path(self.args)
-    #         self.test_imgs, _ = get_test_fnames(self.args, data_path)
-    #     fname = os.path.basename(self.test_imgs[self.test_idx]).replace("_x", "")
-    #     np.save(os.path.join(self.save_dir, fname), pred, allow_pickle=False)
-    #     self.test_idx += 1
+    def save_mask(self, pred):
+        if self.test_idx == 0:
+            data_path = get_data_path(self.args)
+            self.test_imgs, _ = get_test_fnames(self.args, data_path)
+        fname = os.path.basename(self.test_imgs[self.test_idx]).replace("_x", "")
+        np.save(os.path.join(self.save_dir, fname), pred, allow_pickle=False)
+        self.test_idx += 1
 
-    # def get_train_data(self, batch):
-    #     img, lbl = batch["image"], batch["label"]
-    #     if self.args.dim == 2 and self.args.data2d_dim == 3:
-    #         img, lbl = layout_2d(img, lbl)
-    #     if self.args.paste>0:
-    #         img, lbl = self.lesion_paste(img, lbl)
-    #     return img, lbl
+    def get_train_data(self, batch):
+        img, lbl = batch["image"], batch["label"]
+        if self.args.dim == 2 and self.args.data2d_dim == 3:
+            img, lbl = layout_2d(img, lbl)
+        if self.args.paste>0:
+            img, lbl = self.lesion_paste(img, lbl)
+        return img, lbl
 
 
 def layout_2d(img, lbl):
