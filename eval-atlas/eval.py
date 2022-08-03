@@ -199,6 +199,7 @@ class ploras():
 
         pred = []
         img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+        img = img[None]
         with torch.no_grad():
             for m in list(self.models):
                 pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
