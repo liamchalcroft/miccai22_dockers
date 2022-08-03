@@ -30,7 +30,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary, RichProgr
 from utils.utils import make_empty_dir, set_cuda_devices, set_granularity, verify_ckpt_path
 from data_loading.data_module import DataModule
 from copy import deepcopy
-from IPython.utils import io
+import shutil
 
 
 
@@ -196,8 +196,7 @@ class ploras():
             json.dump(data_desc, f)
         args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', results='/home/lchalcroft/mdunet/data', exec_mode='test',
                                 ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
-        with io.capture_output() as captured:
-            Preprocessor(args).run()
+        Preprocessor(args).run()
 
     def nnunet_infer(self, args):
         data_module = DataModule(args)
@@ -233,8 +232,7 @@ class ploras():
         model.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         model.args = args
-        with io.capture_output() as captured:
-            trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
+        trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
 
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
@@ -247,9 +245,9 @@ class ploras():
         return pred_image
 
     def cleanup(self):
-        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data')
-        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results')
-        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction')
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data')
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results')
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction')
 
     def predict(self, input_data):
         """
