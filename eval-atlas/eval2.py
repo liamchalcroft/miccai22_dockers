@@ -103,10 +103,9 @@ class ploras():
             ckpt['hyper_parameters']['args'].ckpt_path = '../docker-atlas/checkpoints/' + str(i) + '/best.ckpt'
             ckpt['hyper_parameters']['args'].fold = i
             ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
+            print(ckpt['hyper_parameters']['args'].ckpt_path)
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
-
-        print(self.args)
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
