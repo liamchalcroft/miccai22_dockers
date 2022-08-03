@@ -76,7 +76,7 @@ class ploras():
 
         tta = True
 
-        args = SimpleNamespace(exec_mode='train', data='/data/16_3d', 
+        args = SimpleNamespace(exec_mode='train', data='/data/16_3d/test', 
                                 results='/results', config='../docker-atlas/config/config.pkl', logname='ploras', 
                                 task='16', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
                                 tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
