@@ -106,6 +106,7 @@ class ploras():
             print(ckpt['hyper_parameters']['args'].ckpt_path)
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
+            print(self.args[-1].ckpt_path)
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
@@ -270,6 +271,7 @@ class ploras():
             self.nnunet_preprocess(t1w_image)
 
         for args in self.args:
+            print(args.)
             self.nnunet_infer(args)
 
         paths = [os.path.join('/home/lchalcroft/mdunet/prediction',i,'aaa.npy') for i in range(len(self.args))]
