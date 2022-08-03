@@ -207,7 +207,7 @@ class ploras():
         trainer = Trainer(
             logger=logger,
             default_root_dir=args.results,
-            benchmark=True,
+            benchmark=False,
             deterministic=False,
             max_epochs=args.epochs,
             precision=16 if args.amp else 32,
@@ -229,7 +229,7 @@ class ploras():
         model.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         model.args = args
-        trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path)
+        trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
 
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
@@ -323,7 +323,6 @@ class ploras():
             os.makedirs(str(self._algorithm_output_path))
         output_image_path = self._algorithm_output_path / input_filename.replace('T1w', 'label-L_mask')
         SimpleITK.WriteImage(output_image, str(output_image_path))
-        print('SAVED TO ', output_image_path)
 
         # Write segmentation file to json.
         if output_image_path.exists():
