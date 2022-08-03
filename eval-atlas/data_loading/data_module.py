@@ -72,6 +72,7 @@ class DataModule(LightningDataModule):
         return fetch_dali_loader(self.val_imgs, self.val_lbls, 1, "eval", **self.kwargs)
 
     def test_dataloader(self):
+        print(self.test_imgs)
         if self.kwargs["benchmark"]:
             return fetch_dali_loader(self.train_imgs, self.train_lbls, self.args.val_batch_size, "test", **self.kwargs)
         return fetch_dali_loader(self.test_imgs, None, 1, "test", **self.kwargs)
