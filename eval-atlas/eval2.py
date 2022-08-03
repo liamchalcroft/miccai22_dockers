@@ -61,7 +61,7 @@ class ploras():
         self.debug = True  # False for running the docker!
         if self.debug:
             self._input_path = Path('/home/lchalcroft/Data/ATLAS_R2.0/Testing/')
-            self._output_path = Path('/home/lchalcroft/mdunet/atlas-eval/output/')
+            self._output_path = Path('/home/lchalcroft/mdunet/eval-atlas/output/')
             self._algorithm_output_path = self._output_path / 'stroke-lesion-segmentation'
             self._output_file = self._output_path / 'results.json'
             self._case_results = []
@@ -77,8 +77,8 @@ class ploras():
 
         tta = True
 
-        args = SimpleNamespace(exec_mode='predict', data='/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data/16_3d/test', 
-                                results='/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/results', config='../docker-atlas/config/config.pkl', logname='ploras', 
+        args = SimpleNamespace(exec_mode='predict', data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/16_3d/test', 
+                                results='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results', config='../docker-atlas/config/config.pkl', logname='ploras', 
                                 task='16', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
                                 tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
@@ -168,8 +168,8 @@ class ploras():
         return out
 
     def nnunet_preprocess(self, image):
-        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data/ATLAS2022_ss/imagesTs/', exist_ok=True)
-        SimpleITK.WriteImage(image, str('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz'))
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/ATLAS2022_ss/imagesTs/', exist_ok=True)
+        SimpleITK.WriteImage(image, str('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz'))
         data_desc = {
                     "description": "Stroke Lesion Segmentation",
                     "labels": {
@@ -187,13 +187,13 @@ class ploras():
                     "release": "BLANK",
                     "tensorImageSize": "4D",
                     "test": [
-        "/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz",
+        "/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz",
                     ],
                     "training": []
         }
-        with open('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data/ATLAS2022_ss/dataset.json', 'w') as f:
+        with open('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data/ATLAS2022_ss/dataset.json', 'w') as f:
             json.dump(data_desc, f)
-        args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data', results='/home/lchalcroft/mdunet/data', exec_mode='test',
+        args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', results='/home/lchalcroft/mdunet/data', exec_mode='test',
                                 ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
         Preprocessor(args).run()
 
@@ -224,7 +224,7 @@ class ploras():
             limit_test_batches=1.0 if args.test_batches == 0 else args.test_batches,
             check_val_every_n_epoch=args.val_epochs,
         )
-        save_dir = os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/prediction', str(args.fold))
+        save_dir = os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction', str(args.fold))
         model.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         model.args = args
@@ -241,9 +241,9 @@ class ploras():
         return pred_image
 
     def cleanup(self):
-        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/data')
-        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/results')
-        os.removerdirs('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/prediction')
+        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data')
+        os.removedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results')
+        os.removerdirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction')
 
     def predict(self, input_data):
         """
@@ -272,7 +272,7 @@ class ploras():
         for args_ in self.args:
             self.nnunet_infer(args_)
 
-        paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/atlas-eval/prediction',str(i),'ATLAS2022_ss_0001.npy') for i in range(len(self.args))]
+        paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction',str(i),'ATLAS2022_ss_0001.npy') for i in range(len(self.args))]
         prediction = self.nnunet_ensemble(paths, ref=t1w_image if self.preprocessed else t1w_image_n4ss)
 
         # pred_crf = SimpleITK.GetArrayFromImage(prediction)
