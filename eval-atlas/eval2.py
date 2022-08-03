@@ -190,7 +190,7 @@ class ploras():
                     ],
                     "training": []
         }
-        with open('data/ATLAS2022_ss/dataset_description.json', 'w') as f:
+        with open('data/ATLAS2022_ss/dataset.json', 'w') as f:
             json.dump(data_desc, f)
         args = SimpleNamespace(data='data', results='results', exec_mode='test',
                                 ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
