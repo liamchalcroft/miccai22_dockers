@@ -186,8 +186,6 @@ class ploras():
         else:
             t1w_image_data = SimpleITK.GetArrayFromImage(t1w_image)
 
-        print(t1w_image_data.shape)
-
         img = t1w_image_data[None]
         img = np.transpose(img, (0,3,2,1))
 
@@ -232,7 +230,6 @@ class ploras():
 
         final_pred = np.transpose(final_pred, (0,3,2,1))
         prediction = final_pred[1].astype(np.float32)
-        print(prediction.shape)
 
         prediction = SimpleITK.GetImageFromArray(prediction)
         if self.preprocessed:
