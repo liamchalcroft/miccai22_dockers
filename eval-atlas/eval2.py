@@ -244,6 +244,11 @@ class ploras():
         pred_image.SetDirection(ref.GetDirection())
         return pred_image
 
+    def setup(self):
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data', exist_ok=True)
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results', exist_ok=True)
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction', exist_ok=True)
+
     def cleanup(self):
         shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/data')
         shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/results')
@@ -263,6 +268,8 @@ class ploras():
 
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
+
+        self.setup()
 
         if not self.preprocessed:
             t1w_image_1mm = self.reslice(t1w_image)
