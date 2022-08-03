@@ -167,6 +167,7 @@ class ploras():
         return out
 
     def nnunet_preprocess(self, image):
+        os.makedirs('data/ATLAS2022_ss/imagesTs/', exist_ok=True)
         SimpleITK.WriteImage(image, str('data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz'))
         data_desc = {
                     "description": "Stroke Lesion Segmentation",
