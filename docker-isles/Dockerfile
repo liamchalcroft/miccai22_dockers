@@ -19,7 +19,6 @@ RUN python -m pip install --user -U pip
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
 
 RUN pip install --disable-pip-version-check --user -r requirements.txt
-RUN pip install numpy --upgrade
 RUN pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/ nvidia-dali-cuda110==1.16.0
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
