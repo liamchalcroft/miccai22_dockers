@@ -110,7 +110,7 @@ class ploras():
                          image.GetPixelID())
 
     def crf(self, image, pred):
-        image = np.transpose(image, [1,2,3,0])
+        # image = np.transpose(image, [1,2,3,0])
         pair_energy = create_pairwise_bilateral(sdims=(5.0,)*3, schan=(5.0,)*image.shape[-1], img=image, chdim=3)
         d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
         U = unary_from_softmax(pred)
@@ -259,8 +259,8 @@ class ploras():
         pred_crf = SimpleITK.GetArrayFromImage(prediction)
         pred_crf = np.stack([1.-pred_crf, pred_crf])
         img_crf = SimpleITK.GetArrayFromImage(stack_image)
-        img_crf = img_crf - img_crf.min(axis=(1,2,3))
-        img_crf = 255 * (img_crf / img_crf.max(axis=(1,2,3)))
+        img_crf = img_crf - img_crf.min(axis=(0,1,2))
+        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
         img_crf[img_crf < 0] = 0
         img_crf[img_crf > 255] = 255
         img_crf = np.asarray(img_crf, np.uint8)
