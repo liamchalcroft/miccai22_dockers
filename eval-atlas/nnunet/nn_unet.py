@@ -282,24 +282,24 @@ class NNUnet(pl.LightningModule):
             self.dllogger.log_metrics(step=(), metrics=metrics)
             self.dllogger.flush()
 
-    def configure_optimizers(self):
-        optimizer = {
-            "sgd": FusedSGD(self.parameters(), lr=self.learning_rate, momentum=self.args.momentum),
-            "adam": FusedAdam(self.parameters(), lr=self.learning_rate, weight_decay=self.args.weight_decay),
-        }[self.args.optimizer.lower()]
+    # def configure_optimizers(self):
+    #     optimizer = {
+    #         "sgd": FusedSGD(self.parameters(), lr=self.learning_rate, momentum=self.args.momentum),
+    #         "adam": FusedAdam(self.parameters(), lr=self.learning_rate, weight_decay=self.args.weight_decay),
+    #     }[self.args.optimizer.lower()]
 
-        if self.args.scheduler:
-            scheduler = {
-                "scheduler": WarmupCosineSchedule(
-                    optimizer=optimizer,
-                    warmup_steps=250,
-                    t_total=self.args.epochs * len(self.trainer.datamodule.train_dataloader()),
-                ),
-                "interval": "step",
-                "frequency": 1,
-            }
-            return {"optimizer": optimizer, "monitor": "val_loss", "lr_scheduler": scheduler}
-        return {"optimizer": optimizer, "monitor": "val_loss"}
+    #     if self.args.scheduler:
+    #         scheduler = {
+    #             "scheduler": WarmupCosineSchedule(
+    #                 optimizer=optimizer,
+    #                 warmup_steps=250,
+    #                 t_total=self.args.epochs * len(self.trainer.datamodule.train_dataloader()),
+    #             ),
+    #             "interval": "step",
+    #             "frequency": 1,
+    #         }
+    #         return {"optimizer": optimizer, "monitor": "val_loss", "lr_scheduler": scheduler}
+    #     return {"optimizer": optimizer, "monitor": "val_loss"}
 
     def save_mask(self, pred):
         if self.test_idx == 0:

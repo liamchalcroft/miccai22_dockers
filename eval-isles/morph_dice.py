@@ -22,21 +22,12 @@ from bayes_opt.logger import JSONLogger
 from bayes_opt.event import Events
 from random import shuffle
 import csv
+from skimage.morphology import remove_small_objects, remove_small_holes
 
 pbounds = {
-    'sdims': (0.01, 10), 'schan': (0.01, 10), 'compat': (0.01, 10)
+    'hole_t': (10, 100), 'hole_c': (1, 5),
+    'remv_t': (10, 100), 'remv_c': (1, 5),
     }
-
-def crf(image, pred, sdims=5., schan=5., compat=10):
-    image = np.transpose(image, [1,2,3,0])
-    pair_energy = create_pairwise_bilateral(sdims=(sdims,)*3, schan=(schan,)*image.shape[-1], img=image, chdim=3)
-    d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
-    U = unary_from_softmax(pred)
-    d.setUnaryEnergy(U)
-    d.addPairwiseEnergy(pair_energy, compat=compat)
-    out = d.inference(5)
-    out = np.asarray(out, np.float32).reshape(pred.shape)
-    return out
 
 def reslice(image, reference=None, target_spacing=[1.,1.,1.]):
     if reference is not None:
@@ -69,7 +60,7 @@ flair_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_flair', dwi.spl
 gt_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
 pred_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
 
-def black_box(sdims, schan, compat, n_samples=50):
+def black_box(hole_t, hole_c, remv_t, remv_c, n_samples=50):
 
     dice_list = []
 
@@ -122,13 +113,16 @@ def black_box(sdims, schan, compat, n_samples=50):
         img_crf = np.asarray(img_crf, np.uint8)
         pred_crf = np.asarray(pred_image_data, np.float32)
         pred_crf = np.stack([1.-pred_crf, pred_crf])
-        final_pred = crf(img_crf, pred_crf, sdims, schan, compat)
-
-        prediction = final_pred[1]
+        prediction = pred_crf[1]
 
         prediction[prediction > 1] = 0
 
-        prediction = (prediction > 0.5).astype(int)
+        prediction = (prediction > 0.5)
+
+        prediction = remove_small_holes(prediction, hole_t, hole_c)
+        prediction = remove_small_objects(prediction, remv_t, remv_c)
+
+        prediction = prediction.astype(int)
 
         dice_val = dice(prediction.flatten(), gt_image_data.flatten())
 

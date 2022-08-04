@@ -3,6 +3,9 @@ import SimpleITK
 import numpy as np
 import json
 import os
+import sys
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(ROOT_DIR)
 from pathlib import Path
 DEFAULT_INPUT_PATH = Path("/input")
 DEFAULT_ALGORITHM_OUTPUT_IMAGES_PATH = Path("/output/images/")
@@ -10,22 +13,12 @@ DEFAULT_ALGORITHM_OUTPUT_FILE_PATH = Path("/output/results.json")
 
 import torch
 from nnunet.nn_unet import NNUnet
+import monai
+from skimage.transform import resize
 from types import SimpleNamespace
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
-from tqdm import tqdm
-from data_preprocessing.preprocessor import Preprocessor
-import json
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelSummary, RichProgressBar
-from utils.utils import verify_ckpt_path
-from data_loading.data_module import DataModule
-from copy import deepcopy
-import shutil
-from skimage.morphology import remove_small_objects, remove_small_holes
-
-import logging
-logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
+from scipy.special import softmax
 
 
 # todo change with your team-name
@@ -53,36 +46,36 @@ class ploras():
 
         tta = True
 
-        args = SimpleNamespace(exec_mode='predict', data='/opt/algorithm/data/16_3d/test', 
-                                results='/opt/algorithm/results', config='/opt/algorithm/config/config.pkl', logname='ploras', 
+        args = SimpleNamespace(exec_mode='train', data='/data', 
+                                results='/results', config='/opt/algorithm/config/config.pkl', logname='ploras', 
                                 task='15', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
-                                tta=tta, tb_logs=False, wandb_logs=False, wandb_project='isles', brats=False, deep_supervision=True, 
+                                tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
                                 nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
                                 ckpt_store_dir='/opt/algorithm/checkpoints/', fold=0, patience=100, 
-                                batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=True, dim=3, 
+                                batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=False, dim=3, 
                                 resume_training=False, num_workers=8, epochs=2000, warmup=5, norm='instance', nvol=4, depth=5, 
                                 min_fmap=4, deep_supr_num=2, res_block=False, filters=None, num_units=2, md_encoder=True, 
                                 md_decoder=False, shape=False, paste=0, data2d_dim=3, oversampling=0.4, overlap=0.5, 
                                 affinity='unique_contiguous', scheduler=False, optimizer='adam', blend='gaussian', 
                                 train_batches=0, test_batches=0)
 
-
         self.model_paths = [
             '/opt/algorithm/checkpoints/0/best.ckpt', '/opt/algorithm/checkpoints/1/best.ckpt', 
             '/opt/algorithm/checkpoints/2/best.ckpt', '/opt/algorithm/checkpoints/3/best.ckpt', 
             '/opt/algorithm/checkpoints/4/best.ckpt'
             ]
-        self.args = []
         for i,pth in enumerate(self.model_paths):
             ckpt = torch.load(pth, map_location=self.device)
-            ckpt['hyper_parameters']['args'] = deepcopy(args)
-            ckpt['hyper_parameters']['args'].ckpt_store_dir = '/opt/algorithm/checkpoints/' + str(i)
-            ckpt['hyper_parameters']['args'].ckpt_path = '/opt/algorithm/checkpoints/' + str(i) + '/best.ckpt'
-            ckpt['hyper_parameters']['args'].fold = i
-            ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
+            ckpt['hyper_parameters']['args'] = args
+            ckpt['hyper_parameters']['args'].ckpt_store_dir += str(i)
             torch.save(ckpt, pth)
-            self.args.append(ckpt['hyper_parameters']['args'])
+        self.models = [NNUnet.load_from_checkpoint(path, map_location=self.device) for path in self.model_paths]
+        for model in self.models:
+            model.to(self.device)
+            model.eval()
+            model.freeze()
+            model.model.training = False
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
@@ -120,93 +113,6 @@ class ploras():
         out = np.asarray(out, np.float32).reshape(pred.shape)
         return out
 
-    def nnunet_preprocess(self, image):
-        os.makedirs('/opt/algorithm/data/ISLES2022/imagesTs/', exist_ok=True)
-        SimpleITK.WriteImage(image, str('/opt/algorithm/data/ISLES2022/imagesTs/ISLES2022_0001.nii.gz'))
-        data_desc = {
-                    "description": "Stroke Lesion Segmentation",
-                    "labels": {
-                        "0": "Background",
-                        "1": "Lesion"
-                    },
-                    "licence": "BLANK",
-                    "modality": {
-                        "0": "ADC",
-                        "1": "DWI",
-                        "2": "FLAIR"
-                    },
-                    "name": "ISLES2022",
-                    "numTest": 1,
-                    "numTraining": 0,
-                    "reference": "BLANK",
-                    "release": "BLANK",
-                    "tensorImageSize": "4D",
-                    "test": [
-        "/opt/algorithm/data/ISLES2022/imagesTs/ISLES2022_0001.nii.gz",
-                    ],
-                    "training": []
-        }
-        with open('/opt/algorithm/data/ISLES2022/dataset.json', 'w') as f:
-            json.dump(data_desc, f)
-        args = SimpleNamespace(data='/opt/algorithm/data', results='/opt/algorithm/data', exec_mode='test',
-                                ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
-        Preprocessor(args).run()
-
-    def nnunet_infer(self, args):
-        data_module = DataModule(args)
-        data_module.setup()
-        ckpt_path = verify_ckpt_path(args)
-        model = NNUnet(args)
-        callbacks = [RichProgressBar(), ModelSummary(max_depth=2)]
-        logger = False
-        trainer = Trainer(
-            logger=logger,
-            default_root_dir=args.results,
-            benchmark=True,
-            deterministic=False,
-            max_epochs=args.epochs,
-            precision=16 if args.amp else 32,
-            gradient_clip_val=args.gradient_clip_val,
-            enable_checkpointing=args.save_ckpt,
-            # callbacks=callbacks,
-            callbacks=None,
-            num_sanity_val_steps=0,
-            accelerator="gpu",
-            devices=args.gpus,
-            num_nodes=args.nodes,
-            strategy="ddp" if args.gpus > 1 else None,
-            limit_train_batches=1.0 if args.train_batches == 0 else args.train_batches,
-            limit_val_batches=1.0 if args.test_batches == 0 else args.test_batches,
-            limit_test_batches=1.0 if args.test_batches == 0 else args.test_batches,
-            check_val_every_n_epoch=args.val_epochs,
-            enable_progress_bar=False,
-            enable_model_summary=False,
-        )
-        save_dir = os.path.join('/opt/algorithm/prediction', str(args.fold))
-        model.save_dir = save_dir
-        os.makedirs(save_dir, exist_ok=True)
-        model.args = args
-        trainer.test(model, dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
-
-    def nnunet_ensemble(self, paths, ref):
-        preds = [np.load(f) for f in paths]
-        pred = np.mean(preds, 0)[1]
-        pred_image = SimpleITK.GetImageFromArray(pred)
-        pred_image.SetOrigin(ref.GetOrigin())
-        pred_image.SetSpacing(ref.GetSpacing())
-        pred_image.SetDirection(ref.GetDirection())
-        return pred_image
-
-    def setup(self):
-        os.makedirs('/opt/algorithm/data', exist_ok=True)
-        os.makedirs('/opt/algorithm/results', exist_ok=True)
-        os.makedirs('/opt/algorithm/prediction', exist_ok=True)
-
-    def cleanup(self):
-        shutil.rmtree('/opt/algorithm/data')
-        shutil.rmtree('/opt/algorithm/results')
-        shutil.rmtree('/opt/algorithm/prediction')
-
     def predict(self, input_data):
         """
         Input   input_data, dict.
@@ -228,8 +134,6 @@ class ploras():
                                          input_data['adc_json'],\
                                          input_data['flair_json']
 
-        self.setup()
-
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
 
@@ -245,30 +149,44 @@ class ploras():
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_1mm)
 
         img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
-        stack_image = SimpleITK.GetImageFromArray(img, isVector=True)
-        stack_image.SetOrigin(flair_image_1mm.GetOrigin()), stack_image.SetSpacing(flair_image_1mm.GetSpacing()), stack_image.SetDirection(flair_image_1mm.GetDirection())
+        img = np.transpose(img, (0,3,2,1))
 
-        self.nnunet_preprocess(stack_image)
+        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
+        orig_shape = img.shape[1:]
+        bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
+        img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
+        meta = np.vstack([bbox, orig_shape, img.shape[1:]])
 
-        for args_ in self.args:
-            self.nnunet_infer(args_)
+        pred = []
+        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
+        img = img[None]
+        with torch.no_grad():
+            for m in list(self.models):
+                pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
+        pred = np.mean(np.stack(pred, axis=0), axis=0)
 
-        paths = [os.path.join('/opt/algorithm/prediction',str(i),'ISLES2022_0001.npy') for i in range(len(self.args))]
-        prediction = self.nnunet_ensemble(paths, ref=flair_image_1mm)
+        # img_crf = img[0].cpu().detach().numpy()
+        # img_crf = img_crf - img_crf.min()
+        # img_crf = 255 * (img_crf / img_crf.max())
+        # img_crf[img_crf < 0] = 0
+        # img_crf[img_crf > 255] = 255
+        # img_crf = np.asarray(img_crf, np.uint8)
+        # pred_crf = np.asarray(pred, np.float32)
+        # pred = self.crf(img_crf, pred_crf)
 
-        pred_crf = SimpleITK.GetArrayFromImage(prediction)
-        pred_crf = np.stack([1.-pred_crf, pred_crf])
-        img_crf = SimpleITK.GetArrayFromImage(stack_image)
-        img_crf = img_crf - img_crf.min(axis=(1,2,3))
-        img_crf = 255 * (img_crf / img_crf.max(axis=(1,2,3)))
-        img_crf[img_crf < 0] = 0
-        img_crf[img_crf > 255] = 255
-        img_crf = np.asarray(img_crf, np.uint8)
-        pred_crf = np.asarray(pred_crf, np.float32)
-        prediction = self.crf(img_crf, pred_crf)
-        prediction = prediction[1]
+        min_d, max_d = meta[0,0], meta[1,0]
+        min_h, max_h = meta[0,1], meta[1,1]
+        min_w, max_w = meta[0,2], meta[1,2]
+
+        n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
+
+        final_pred = np.zeros((n_class, *original_shape))
+        final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
+
+        final_pred = np.transpose(final_pred, (0,3,2,1))
+        prediction = final_pred[1]
+
         prediction = SimpleITK.GetImageFromArray(prediction)
-
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
 
         prediction = self.reslice(prediction, reference=dwi_image_rs)
@@ -279,11 +197,6 @@ class ploras():
         prediction[prediction > 1] = 0
 
         prediction = (prediction > 0.5)
-
-        prediction = remove_small_holes(prediction)
-        prediction = remove_small_objects(prediction)
-
-        self.cleanup()
 
         #################################### End of your prediction method. ############################################
         ################################################################################################################

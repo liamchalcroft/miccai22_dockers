@@ -294,6 +294,7 @@ class MDUNet(nn.Module):
                 out_all.append(interpolate(feature_map, out.shape[2:]))
             return torch.stack(out_all, dim=1)
         return out
+        # return torch.zeros(1,2,128,128,128, dtype=x.dtype, device=x.device)
 
     def get_input_block(self):
         return UnetBasicBlock(

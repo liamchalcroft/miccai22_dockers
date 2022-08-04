@@ -158,6 +158,8 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
 
     mean_dice = np.nanmean(dice_list)
 
+    del prediction, gt_image_data, fpred_image_rs, gt_image_rs, fpred_image
+
     return mean_dice
 
 optimizer = BayesianOptimization(
