@@ -266,7 +266,6 @@ class ploras():
         img_crf = np.asarray(img_crf, np.uint8)
         pred_crf = np.asarray(pred_crf, np.float32)
         prediction = self.crf(img_crf, pred_crf)
-        print(img_crf.shape, pred_crf.shape, prediction.shape)
         prediction = prediction[1]
         prediction = SimpleITK.GetImageFromArray(prediction)
 
