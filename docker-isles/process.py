@@ -25,7 +25,7 @@ import shutil
 from skimage.morphology import remove_small_objects, remove_small_holes
 
 import logging
-logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
+# logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
 
 
 # todo change with your team-name
