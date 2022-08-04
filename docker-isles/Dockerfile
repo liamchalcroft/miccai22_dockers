@@ -1,4 +1,5 @@
-FROM python:3.9-slim
+ARG FROM_IMAGE_NAME=nvcr.io/nvidia/pytorch:21.11-py3
+FROM ${FROM_IMAGE_NAME} 
 
 RUN apt-get update && apt-get -y install --reinstall build-essential && apt-get -y install git && apt-get -y install gcc
 
@@ -15,9 +16,12 @@ ENV PATH="/home/algorithm/.local/bin:${PATH}"
 
 RUN python -m pip install --user -U pip
 
-
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
-RUN python -m pip install --user -rrequirements.txt
+
+RUN pip install --disable-pip-version-check --user -r requirements.txt
+RUN pip uninstall -y torchtext
+RUN pip install numpy --upgrade
+RUN pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/ nvidia-dali-cuda110==1.16.0
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
 COPY --chown=algorithm:algorithm nnunet /opt/algorithm/nnunet
