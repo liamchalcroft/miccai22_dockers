@@ -238,7 +238,10 @@ class ploras():
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
         pred = np.mean(preds, 0)[1]
+        print()
+        print(pred.shape)
         pred = pred.transpose(2,1,0)
+        print(pred.shape)
         pred_image = SimpleITK.GetImageFromArray(pred)
         pred_image.SetOrigin(ref.GetOrigin())
         pred_image.SetSpacing(ref.GetSpacing())
