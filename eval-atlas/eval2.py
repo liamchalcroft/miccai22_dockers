@@ -31,6 +31,8 @@ from utils.utils import make_empty_dir, set_cuda_devices, set_granularity, verif
 from data_loading.data_module import DataModule
 from copy import deepcopy
 import shutil
+from skimage.morphology import remove_small_objects, remove_small_holes
+
 
 import logging
 logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
@@ -164,7 +166,7 @@ class ploras():
         d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
         U = unary_from_softmax(pred)
         d.setUnaryEnergy(U)
-        d.addPairwiseEnergy(pair_energy, compat=10)
+        d.addPairwiseEnergy(pair_energy, compat=3)
         out = d.inference(5)
         out = np.asarray(out, np.float32).reshape(pred.shape)
         return out
@@ -288,17 +290,17 @@ class ploras():
         prediction = self.nnunet_ensemble(paths, ref=t1w_image if self.preprocessed else t1w_image_n4ss)
 
         pred_crf = SimpleITK.GetArrayFromImage(prediction)
-        # pred_crf = np.stack([1.-pred_crf, pred_crf])
+        pred_crf = np.stack([1.-pred_crf, pred_crf])
         img_crf = SimpleITK.GetArrayFromImage(t1w_image if self.preprocessed else t1w_image_n4ss)
-        # img_crf = img_crf - img_crf.min()
-        # img_crf = 255 * (img_crf / img_crf.max())
-        # img_crf[img_crf < 0] = 0
-        # img_crf[img_crf > 255] = 255
-        # img_crf = np.asarray(img_crf, np.uint8)
-        # pred_crf = np.asarray(pred_crf, np.float32)
-        # prediction = self.crf(img_crf, pred_crf)
-        # prediction = prediction[1]
-        # prediction = SimpleITK.GetImageFromArray(prediction)
+        img_crf = img_crf - img_crf.min()
+        img_crf = 255 * (img_crf / img_crf.max())
+        img_crf[img_crf < 0] = 0
+        img_crf[img_crf > 255] = 255
+        img_crf = np.asarray(img_crf, np.uint8)
+        pred_crf = np.asarray(pred_crf, np.float32)
+        prediction = self.crf(img_crf, pred_crf)
+        prediction = prediction[1]
+        prediction = SimpleITK.GetImageFromArray(prediction)
 
         if self.preprocessed:
             prediction.SetOrigin(t1w_image.GetOrigin()), prediction.SetSpacing(t1w_image.GetSpacing()), prediction.SetDirection(t1w_image.GetDirection())
@@ -310,6 +312,9 @@ class ploras():
         prediction = SimpleITK.GetArrayFromImage(prediction)
 
         prediction = (prediction > 0.5)
+
+        prediction = remove_small_holes(prediction)
+        prediction = remove_small_objects(prediction)
 
         self.cleanup()
 
