@@ -18,6 +18,7 @@ docker run --rm \
         --security-opt="no-new-privileges" \
         --shm-size="128m" \
         --pids-limit="256" \
+        --gpus="all" \
         -v $SCRIPTPATH/test/:/input/ \
         -v ploras-output-$VOLUME_SUFFIX:/output/ \
         ploras
