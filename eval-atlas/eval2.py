@@ -10,9 +10,6 @@ DEFAULT_ALGORITHM_OUTPUT_FILE_PATH = Path("/output/results.json")
 
 import torch
 from nnunet.nn_unet import NNUnet
-import monai
-from skimage.transform import resize
-import argparse
 import tempfile
 import pyrobex
 from pyrobex.errors import PyRobexError
@@ -22,17 +19,15 @@ from types import SimpleNamespace
 import pydensecrf.densecrf as dcrf
 from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
 from tqdm import tqdm
-from scipy.special import softmax
 from data_preprocessing.preprocessor import Preprocessor
 import json
-from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint, ModelSummary, RichProgressBar
-from utils.utils import make_empty_dir, set_cuda_devices, set_granularity, verify_ckpt_path
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelSummary, RichProgressBar
+from utils.utils import verify_ckpt_path
 from data_loading.data_module import DataModule
 from copy import deepcopy
 import shutil
 from skimage.morphology import remove_small_objects, remove_small_holes
-
 
 import logging
 logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
@@ -292,6 +287,7 @@ class ploras():
         pred_crf = SimpleITK.GetArrayFromImage(prediction)
         pred_crf = np.stack([1.-pred_crf, pred_crf])
         img_crf = SimpleITK.GetArrayFromImage(t1w_image if self.preprocessed else t1w_image_n4ss)
+        img_crf = img_crf[None]
         img_crf = img_crf - img_crf.min()
         img_crf = 255 * (img_crf / img_crf.max())
         img_crf[img_crf < 0] = 0
