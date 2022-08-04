@@ -244,7 +244,7 @@ class ploras():
         adc_image_data = SimpleITK.GetArrayFromImage(adc_image_1mm)
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_1mm)
 
-        img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
+        img = np.stack([adc_image_data, dwi_image_data, flair_image_data], axis=-1)
         stack_image = SimpleITK.GetImageFromArray(img, isVector=True)
         stack_image.SetOrigin(flair_image_1mm.GetOrigin()), stack_image.SetSpacing(flair_image_1mm.GetSpacing()), stack_image.SetDirection(flair_image_1mm.GetDirection())
 
