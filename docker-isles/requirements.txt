@@ -11,3 +11,4 @@ git+https://github.com/NVIDIA/dllogger
 git+https://github.com/lucasb-eyer/pydensecrf.git
 pytorch-lightning
 scikit-image
+rich
