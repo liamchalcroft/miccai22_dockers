@@ -238,10 +238,7 @@ class ploras():
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
         pred = np.mean(preds, 0)[1]
-        print()
-        print(pred.shape)
-        pred = pred.transpose(2,1,0)
-        print(pred.shape)
+        # pred = pred.transpose(2,1,0)
         pred_image = SimpleITK.GetImageFromArray(pred)
         pred_image.SetOrigin(ref.GetOrigin())
         pred_image.SetSpacing(ref.GetSpacing())
@@ -293,7 +290,6 @@ class ploras():
         pred_crf = SimpleITK.GetArrayFromImage(prediction)
         # pred_crf = np.stack([1.-pred_crf, pred_crf])
         img_crf = SimpleITK.GetArrayFromImage(t1w_image if self.preprocessed else t1w_image_n4ss)
-        print(pred_crf.shape, img_crf.shape)
         # img_crf = img_crf - img_crf.min()
         # img_crf = 255 * (img_crf / img_crf.max())
         # img_crf[img_crf < 0] = 0
