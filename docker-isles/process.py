@@ -80,7 +80,7 @@ class ploras():
             ckpt['hyper_parameters']['args'].ckpt_store_dir = '/opt/algorithm/checkpoints/' + str(i)
             ckpt['hyper_parameters']['args'].ckpt_path = '/opt/algorithm/checkpoints/' + str(i) + '/best.ckpt'
             ckpt['hyper_parameters']['args'].fold = i
-            ckpt['hyper_parameters']['args'].gpus = 1 if torch.cuda.is_available() else 0
+            ckpt['hyper_parameters']['args'].gpus = 1
             torch.save(ckpt, pth)
             self.args.append(ckpt['hyper_parameters']['args'])
 
