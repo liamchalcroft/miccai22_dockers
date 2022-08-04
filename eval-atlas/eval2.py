@@ -233,7 +233,7 @@ class ploras():
         model.save_dir = save_dir
         os.makedirs(save_dir, exist_ok=True)
         model.args = args
-        trainer.test(model, test_dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
+        trainer.test(model, dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
 
     def nnunet_ensemble(self, paths, ref):
         preds = [np.load(f) for f in paths]
