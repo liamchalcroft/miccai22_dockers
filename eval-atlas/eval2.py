@@ -287,9 +287,10 @@ class ploras():
         paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/eval-atlas/prediction',str(i),'ATLAS2022_ss_0001.npy') for i in range(len(self.args))]
         prediction = self.nnunet_ensemble(paths, ref=t1w_image if self.preprocessed else t1w_image_n4ss)
 
-        # pred_crf = SimpleITK.GetArrayFromImage(prediction)
+        pred_crf = SimpleITK.GetArrayFromImage(prediction)
         # pred_crf = np.stack([1.-pred_crf, pred_crf])
-        # img_crf = SimpleITK.GetArrayFromImage(t1w_image if self.preprocessed else t1w_image_n4ss)
+        img_crf = SimpleITK.GetArrayFromImage(t1w_image if self.preprocessed else t1w_image_n4ss)
+        print(pred_crf.shape, img_crf.shape)
         # img_crf = img_crf - img_crf.min()
         # img_crf = 255 * (img_crf / img_crf.max())
         # img_crf[img_crf < 0] = 0
