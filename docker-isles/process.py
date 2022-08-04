@@ -53,7 +53,7 @@ class ploras():
 
         tta = True
 
-        args = SimpleNamespace(exec_mode='predict', data='/opt/algorithm/data/16_3d/test', 
+        args = SimpleNamespace(exec_mode='predict', data='/opt/algorithm/data/15_3d/test', 
                                 results='/opt/algorithm/results', config='/opt/algorithm/config/config.pkl', logname='ploras', 
                                 task='15', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
                                 tta=tta, tb_logs=False, wandb_logs=False, wandb_project='isles', brats=False, deep_supervision=True, 
@@ -149,7 +149,7 @@ class ploras():
         with open('/opt/algorithm/data/ISLES2022/dataset.json', 'w') as f:
             json.dump(data_desc, f)
         args = SimpleNamespace(data='/opt/algorithm/data', results='/opt/algorithm/data', exec_mode='test',
-                                ohe=False, verbose=False, task='16', dim=3, n_jobs=1)
+                                ohe=False, verbose=False, task='15', dim=3, n_jobs=1)
         Preprocessor(args).run()
 
     def nnunet_infer(self, args):
