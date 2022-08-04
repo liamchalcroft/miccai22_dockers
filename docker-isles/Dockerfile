@@ -30,6 +30,6 @@ COPY --chown=algorithm:algorithm data_loading /opt/algorithm/data_loading
 COPY --chown=algorithm:algorithm data_preprocessing /opt/algorithm/data_preprocessing
 
 # COPY --chown=algorithm:algorithm test /opt/algorithm/test
-COPY --chown=algorithm:algorithm test /input
+# COPY --chown=algorithm:algorithm test /input
 
 ENTRYPOINT python -m process $0 $@
