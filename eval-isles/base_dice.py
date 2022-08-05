@@ -18,11 +18,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 from scipy.spatial.distance import dice
 from bayes_opt import BayesianOptimization
+from skimage.morphology import remove_small_objects, remove_small_holes
 import csv
-
-pbounds = {
-    'sdims': (0.01, 10), 'schan': (0.01, 10), 'compat': (0.01, 10)
-    }
 
 def crf(image, pred, sdims=5., schan=5., compat=10):
     image = np.transpose(image, [1,2,3,0])
@@ -121,12 +118,17 @@ for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in tqdm(enumerate(zip(dwi
     pred_crf = np.asarray(pred_image_data, np.float32)
     pred_crf = np.stack([1.-pred_crf, pred_crf])
     final_pred = pred_crf
-
+    # final_pred = crf(img_crf, pred_crf, (0.1,)*3, (0.1,), 3)
     prediction = final_pred[1]
-
+        
     prediction[prediction > 1] = 0
 
-    prediction = (prediction > 0.5).astype(int)
+    prediction = (prediction > 0.5)
+
+    # prediction = remove_small_holes(prediction, 10, 1)
+    # prediction = remove_small_objects(prediction, 10, 1)
+
+    prediction = prediction.astype(int)
 
     dice_val = dice(prediction.flatten(), gt_image_data.flatten())
 
@@ -134,6 +136,6 @@ for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in tqdm(enumerate(zip(dwi
 
     # print(np.mean(dice_list))
 
-mean_dice = np.mean(dice_list)
+mean_dice = np.nanmean(dice_list)
 
 print('Baseline dice (i.e. no CRF): ', mean_dice)
