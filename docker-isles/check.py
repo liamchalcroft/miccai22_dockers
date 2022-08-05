@@ -34,7 +34,7 @@ class ploras():
                  input_path: Path = DEFAULT_INPUT_PATH,
                  output_path: Path = DEFAULT_ALGORITHM_OUTPUT_IMAGES_PATH):
 
-        self.debug = False  # False for running the docker!
+        self.debug = True  # False for running the docker!
         if self.debug:
             self._input_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/test/')
             self._output_path = Path('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/output/')
@@ -96,18 +96,18 @@ class ploras():
             resample.SetSize(reference.GetSize())
             resample.SetOutputDirection(reference.GetDirection())
             resample.SetOutputOrigin(reference.GetOrigin())
-            resample.SetDefaultPixelValue(image.GetPixelIDValue())
+            resample.SetDefaultPixelValue(0)
 
             newimage = resample.Execute(image)
-            return newimage
         else:
             orig_spacing = image.GetSpacing()
             orig_size = image.GetSize()
             target_size = [int(round(osz*ospc/tspc)) \
                 for osz,ospc,tspc in zip(orig_size, orig_spacing, target_spacing)]
-            return SimpleITK.Resample(image, target_size, SimpleITK.Transform(), SimpleITK.sitkLinear,
+            newimage = SimpleITK.Resample(image, target_size, SimpleITK.Transform(), SimpleITK.sitkLinear,
                          image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                          image.GetPixelID())
+        return newimage
 
     def crf(self, image, pred):
         # image = np.transpose(image, [1,2,3,0])
@@ -248,6 +248,9 @@ class ploras():
         stack_image = SimpleITK.GetImageFromArray(img, isVector=True)
         stack_image.SetOrigin(flair_image_1mm.GetOrigin()), stack_image.SetSpacing(flair_image_1mm.GetSpacing()), stack_image.SetDirection(flair_image_1mm.GetDirection())
 
+        SimpleITK.WriteImage(stack_image, 'stack_image.nii.gz')
+        SimpleITK.WriteImage(adc_image_rs, 'adc_image.nii.gz')
+
         self.nnunet_preprocess(stack_image)
 
         for args_ in self.args:
@@ -256,18 +259,18 @@ class ploras():
         paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction',str(i),'ISLES2022_0001.npy') for i in range(len(self.args))]
         prediction = self.nnunet_ensemble(paths, ref=flair_image_1mm)
 
-        pred_crf = SimpleITK.GetArrayFromImage(prediction)
-        pred_crf = np.stack([1.-pred_crf, pred_crf])
-        img_crf = SimpleITK.GetArrayFromImage(stack_image)
-        img_crf = img_crf - img_crf.min(axis=(0,1,2))
-        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
-        img_crf[img_crf < 0] = 0
-        img_crf[img_crf > 255] = 255
-        img_crf = np.asarray(img_crf, np.uint8)
-        pred_crf = np.asarray(pred_crf, np.float32)
-        prediction = self.crf(img_crf, pred_crf)
-        prediction = prediction[1]
-        prediction = SimpleITK.GetImageFromArray(prediction)
+#        pred_crf = SimpleITK.GetArrayFromImage(prediction)
+#        pred_crf = np.stack([1.-pred_crf, pred_crf])
+#        img_crf = SimpleITK.GetArrayFromImage(stack_image)
+#        img_crf = img_crf - img_crf.min(axis=(0,1,2))
+#        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
+#        img_crf[img_crf < 0] = 0
+#        img_crf[img_crf > 255] = 255
+#        img_crf = np.asarray(img_crf, np.uint8)
+#        pred_crf = np.asarray(pred_crf, np.float32)
+#        prediction = self.crf(img_crf, pred_crf)
+#        prediction = prediction[1]
+#        prediction = SimpleITK.GetImageFromArray(prediction)
 
 
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -281,8 +284,8 @@ class ploras():
 
         prediction = (prediction > 0.5)
 
-        prediction = remove_small_holes(prediction)
-        prediction = remove_small_objects(prediction)
+#        prediction = remove_small_holes(prediction)
+#        prediction = remove_small_objects(prediction)
 
         self.cleanup()
 
@@ -351,6 +354,8 @@ class ploras():
             file_list = list((self._input_path / "images" / slug).glob("*.mha"))
         elif filetype == 'json':
             file_list = list(self._input_path.glob("*{}.json".format(slug)))
+
+        print(self._input_path / 'images' / slug)
 
         # Check that there is a single file to load.
         if len(file_list) != 1:
