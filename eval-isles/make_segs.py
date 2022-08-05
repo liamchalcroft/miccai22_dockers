@@ -24,6 +24,9 @@ from data_loading.data_module import DataModule
 from copy import deepcopy
 import shutil
 
+import logging
+logging.getLogger("pytorch_lightning").setLevel(logging.WARNING)
+
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
 
 
