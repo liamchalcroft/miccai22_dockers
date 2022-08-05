@@ -25,8 +25,8 @@ import csv
 from skimage.morphology import remove_small_objects, remove_small_holes
 
 pbounds = {
-    'hole_t': (10, 100), 'hole_c': (1, 5),
-    'remv_t': (10, 100), 'remv_c': (1, 5),
+    'hole_t': (1, 100), 'hole_c': (1, 5),
+    'remv_t': (1, 100), 'remv_c': (1, 5),
     'sdims': (0.01, 10), 'schan': (0.01, 10), 'compat': (0.01, 10)
     }
 
@@ -66,17 +66,17 @@ def reslice(image, reference=None, target_spacing=[1.,1.,1.]):
                         image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                         image.GetPixelID())
 
-# dwi_list = glob.glob('/Users/liamchalcroft/Downloads/isles_dwi/*.nii.gz')
-# adc_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
-# flair_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
-# gt_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
-# pred_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
+dwi_list = glob.glob('/Users/liamchalcroft/Downloads/Dropbox/isles_dwi/*.nii.gz')
+adc_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
+flair_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
+gt_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
+pred_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
 
-dwi_list = glob.glob('/home/lchalcroft/mdunet/isles_dwi/*.nii.gz')
-adc_list = [os.path.join('/home/lchalcroft/mdunet/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
-flair_list = [os.path.join('/home/lchalcroft/mdunet/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
-gt_list = [os.path.join('/home/lchalcroft/mdunet/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
-pred_list = [os.path.join('/home/lchalcroft/mdunet/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
+# dwi_list = glob.glob('/home/lchalcroft/mdunet/isles_dwi/*.nii.gz')
+# adc_list = [os.path.join('/home/lchalcroft/mdunet/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
+# flair_list = [os.path.join('/home/lchalcroft/mdunet/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
+# gt_list = [os.path.join('/home/lchalcroft/mdunet/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
+# pred_list = [os.path.join('/home/lchalcroft/mdunet/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
 
 def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50):
 
@@ -143,6 +143,8 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
 
         dice_val = dice(prediction.flatten(), gt_image_data.flatten())
 
+        # print(dice_val)
+
         dice_list.append(dice_val)
 
     mean_dice = np.nanmean(dice_list)
@@ -156,9 +158,9 @@ optimizer = BayesianOptimization(
     verbose=2
 )
 
-logger = JSONLogger(path="./morphcsf_logs.json")
+# logger = JSONLogger(path="./morphcsf_logs.json")
 
-optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
+# optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
 
 optimizer.maximize(
     init_points=10,
