@@ -60,11 +60,17 @@ def reslice(image, reference=None, target_spacing=[1.,1.,1.]):
                         image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                         image.GetPixelID())
 
-dwi_list = glob.glob('/Users/liamchalcroft/Downloads/isles_dwi/*.nii.gz')
-adc_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
-flair_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
-gt_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
-pred_list = [os.path.join('/Users/liamchalcroft/Downloads/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
+# dwi_list = glob.glob('/Users/liamchalcroft/Downloads/Dropbox/isles_dwi/*.nii.gz')
+# adc_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
+# flair_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
+# gt_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
+# pred_list = [os.path.join('/Users/liamchalcroft/Downloads/Dropbox/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
+
+dwi_list = glob.glob('/home/lchalcroft/mdunet/isles_dwi/*.nii.gz')
+adc_list = [os.path.join('/home/lchalcroft/mdunet/isles_adc', dwi.split('/')[-1].replace('dwi','adc')) for dwi in dwi_list]
+flair_list = [os.path.join('/home/lchalcroft/mdunet/isles_flair', dwi.split('/')[-1].replace('dwi','flair')) for dwi in dwi_list]
+gt_list = [os.path.join('/home/lchalcroft/mdunet/isles_labs', dwi.split('/')[-1].replace('dwi','msk')) for dwi in dwi_list]
+pred_list = [os.path.join('/home/lchalcroft/mdunet/isles_preds', dwi.split('/')[-1]) for dwi in dwi_list]
 
 
 dice_list = []
