@@ -11,15 +11,18 @@ DEFAULT_ALGORITHM_OUTPUT_FILE_PATH = Path("/output/results.json")
 import torch
 from nnunet.nn_unet import NNUnet
 import monai
-from skimage.transform import resize
-import argparse
-import tempfile
-import pyrobex
-from pyrobex.errors import PyRobexError
 from types import SimpleNamespace
 import glob
 from tqdm import tqdm
+from data_preprocessing.preprocessor import Preprocessor
+import json
 from scipy.special import softmax
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelSummary, RichProgressBar
+from utils.utils import verify_ckpt_path
+from data_loading.data_module import DataModule
+from copy import deepcopy
+import shutil
 
 """ONLY FOR EVALUATION STAGE - WANT TO MAKE SURE DOCKER FOLLOWS SAME ALGO"""
 
@@ -48,38 +51,38 @@ class ploras():
 
         self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-        tta = False
+        tta = True
 
-        args = SimpleNamespace(exec_mode='train', data='/data', 
-                                results='/results', config='config/config.pkl', logname='ploras', 
+        args = SimpleNamespace(exec_mode='predict', data='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data/15_3d/test', 
+                                results='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/results', config='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/config/config.pkl', logname='ploras', 
                                 task='15', gpus=1, nodes=1, learning_rate=0.0002, gradient_clip_val=1.0, negative_slope=0.01, 
-                                tta=tta, tb_logs=False, wandb_logs=True, wandb_project='isles', brats=False, deep_supervision=True, 
+                                tta=tta, tb_logs=False, wandb_logs=False, wandb_project='isles', brats=False, deep_supervision=True, 
                                 more_chn=False, invert_resampled_y=False, amp=True, benchmark=False, focal=False, save_ckpt=False, 
                                 nfolds=5, seed=1, skip_first_n_eval=500, val_epochs=10, ckpt_path=None, 
-                                ckpt_store_dir='../docker-isles/checkpoints/', fold=0, patience=100, 
-                                batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=False, dim=3, 
+                                ckpt_store_dir='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/', fold=0, patience=100, 
+                                batch_size=4, val_batch_size=4, momentum=0.99, weight_decay=0.0001, save_preds=True, dim=3, 
                                 resume_training=False, num_workers=8, epochs=2000, warmup=5, norm='instance', nvol=4, depth=5, 
                                 min_fmap=4, deep_supr_num=2, res_block=False, filters=None, num_units=2, md_encoder=True, 
                                 md_decoder=False, shape=False, paste=0, data2d_dim=3, oversampling=0.4, overlap=0.5, 
                                 affinity='unique_contiguous', scheduler=False, optimizer='adam', blend='gaussian', 
                                 train_batches=0, test_batches=0)
 
+
         self.model_paths = [
-            '../docker-isles/checkpoints/0/best.ckpt', '../docker-isles/checkpoints/1/best.ckpt', 
-            '../docker-isles/checkpoints/2/best.ckpt', '../docker-isles/checkpoints/3/best.ckpt', 
-            '../docker-isles/checkpoints/4/best.ckpt'
+            '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/0/best.ckpt', '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/1/best.ckpt', 
+            '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/2/best.ckpt', '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/3/best.ckpt', 
+            '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/4/best.ckpt'
             ]
+        self.args = []
         for i,pth in enumerate(self.model_paths):
             ckpt = torch.load(pth, map_location=self.device)
-            ckpt['hyper_parameters']['args'] = args
-            ckpt['hyper_parameters']['args'].ckpt_store_dir += str(i)
+            ckpt['hyper_parameters']['args'] = deepcopy(args)
+            ckpt['hyper_parameters']['args'].ckpt_store_dir = '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/' + str(i)
+            ckpt['hyper_parameters']['args'].ckpt_path = '/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/checkpoints/' + str(i) + '/best.ckpt'
+            ckpt['hyper_parameters']['args'].fold = i
+            ckpt['hyper_parameters']['args'].gpus = 1
             torch.save(ckpt, pth)
-        self.models = [NNUnet.load_from_checkpoint(path, map_location=self.device) for path in self.model_paths]
-        for model in self.models:
-            model.to(self.device)
-            model.eval()
-            model.freeze()
-            model.model.training = False
+            self.args.append(ckpt['hyper_parameters']['args'])
 
     def reslice(self, image, reference=None, target_spacing=[1.,1.,1.]):
         if reference is not None:
@@ -96,15 +99,102 @@ class ploras():
             resample.SetDefaultPixelValue(0)
 
             newimage = resample.Execute(image)
-            return newimage
         else:
             orig_spacing = image.GetSpacing()
             orig_size = image.GetSize()
             target_size = [int(round(osz*ospc/tspc)) \
                 for osz,ospc,tspc in zip(orig_size, orig_spacing, target_spacing)]
-            return SimpleITK.Resample(image, target_size, SimpleITK.Transform(), SimpleITK.sitkLinear,
+            newimage = SimpleITK.Resample(image, target_size, SimpleITK.Transform(), SimpleITK.sitkLinear,
                          image.GetOrigin(), target_spacing, image.GetDirection(), 0,
                          image.GetPixelID())
+        return newimage
+
+    def nnunet_preprocess(self, image):
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data/ISLES2022/imagesTs/', exist_ok=True)
+        SimpleITK.WriteImage(image, str('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data/ISLES2022/imagesTs/ISLES2022_0001.nii.gz'))
+        data_desc = {
+                    "description": "Stroke Lesion Segmentation",
+                    "labels": {
+                        "0": "Background",
+                        "1": "Lesion"
+                    },
+                    "licence": "BLANK",
+                    "modality": {
+                        "0": "ADC",
+                        "1": "DWI",
+                        "2": "FLAIR"
+                    },
+                    "name": "ISLES2022",
+                    "numTest": 1,
+                    "numTraining": 0,
+                    "reference": "BLANK",
+                    "release": "BLANK",
+                    "tensorImageSize": "4D",
+                    "test": [
+        "/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data/ISLES2022/imagesTs/ISLES2022_0001.nii.gz",
+                    ],
+                    "training": []
+        }
+        with open('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data/ISLES2022/dataset.json', 'w') as f:
+            json.dump(data_desc, f)
+        args = SimpleNamespace(data='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data', results='/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data', exec_mode='test',
+                                ohe=False, verbose=False, task='15', dim=3, n_jobs=1)
+        Preprocessor(args).run()
+
+    def nnunet_infer(self, args):
+        data_module = DataModule(args)
+        data_module.setup()
+        ckpt_path = verify_ckpt_path(args)
+        model = NNUnet(args)
+        callbacks = [RichProgressBar(), ModelSummary(max_depth=2)]
+        logger = False
+        trainer = Trainer(
+            logger=logger,
+            default_root_dir=args.results,
+            benchmark=True,
+            deterministic=False,
+            max_epochs=args.epochs,
+            precision=16 if args.amp else 32,
+            gradient_clip_val=args.gradient_clip_val,
+            enable_checkpointing=args.save_ckpt,
+            # callbacks=callbacks,
+            callbacks=None,
+            num_sanity_val_steps=0,
+            accelerator="gpu",
+            devices=args.gpus,
+            num_nodes=args.nodes,
+            strategy="ddp" if args.gpus > 1 else None,
+            limit_train_batches=1.0 if args.train_batches == 0 else args.train_batches,
+            limit_val_batches=1.0 if args.test_batches == 0 else args.test_batches,
+            limit_test_batches=1.0 if args.test_batches == 0 else args.test_batches,
+            check_val_every_n_epoch=args.val_epochs,
+            enable_progress_bar=False,
+            enable_model_summary=False,
+        )
+        save_dir = os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction', str(args.fold))
+        model.save_dir = save_dir
+        os.makedirs(save_dir, exist_ok=True)
+        model.args = args
+        trainer.test(model, dataloaders=data_module.test_dataloader(), ckpt_path=ckpt_path, verbose=False)
+
+    def nnunet_ensemble(self, paths, ref):
+        preds = [np.load(f) for f in paths]
+        pred = np.mean(preds, 0)[1]
+        pred_image = SimpleITK.GetImageFromArray(pred)
+        pred_image.SetOrigin(ref.GetOrigin())
+        pred_image.SetSpacing(ref.GetSpacing())
+        pred_image.SetDirection(ref.GetDirection())
+        return pred_image
+
+    def setup(self):
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data', exist_ok=True)
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/results', exist_ok=True)
+        os.makedirs('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction', exist_ok=True)
+
+    def cleanup(self):
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/data')
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/results')
+        shutil.rmtree('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction')
 
 
     def predict(self, input_data):
@@ -121,6 +211,14 @@ class ploras():
                                             input_data['adc_image'],\
                                             input_data['flair_image']
 
+
+        # Get all json inputs.
+        dwi_json, adc_json, flair_json = input_data['dwi_json'],\
+                                         input_data['adc_json'],\
+                                         input_data['flair_json']
+
+        self.setup()
+
         ################################################################################################################
         #################################### Beginning of your prediction method. ######################################
 
@@ -135,45 +233,35 @@ class ploras():
         adc_image_data = SimpleITK.GetArrayFromImage(adc_image_1mm)
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_1mm)
 
-        img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
-        img = np.transpose(img, (0,3,2,1))
+        img = np.stack([adc_image_data, dwi_image_data, flair_image_data], axis=-1)
+        stack_image = SimpleITK.GetImageFromArray(img, isVector=True)
+        stack_image.SetOrigin(flair_image_1mm.GetOrigin()), stack_image.SetSpacing(flair_image_1mm.GetSpacing()), stack_image.SetDirection(flair_image_1mm.GetDirection())
 
-        img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img).astype(np.float32)
-        orig_shape = img.shape[1:]
-        bbox = monai.transforms.utils.generate_spatial_bounding_box(img, channel_indices=-1)
-        img = monai.transforms.SpatialCrop(roi_start=bbox[0], roi_end=bbox[1])(img)
-        meta = np.vstack([bbox, orig_shape, img.shape[1:]])
+        SimpleITK.WriteImage(stack_image, 'stack_image.nii.gz')
+        SimpleITK.WriteImage(adc_image_rs, 'adc_image.nii.gz')
 
-        pred = []
-        img = monai.transforms.ToTensor(dtype=torch.float32, device=self.device)(img)
-        img = img[None]
-        with torch.no_grad():
-            for m in list(self.models):
-                pred.append(softmax(m._forward(img).squeeze(0).cpu().detach().numpy(), axis=0))
-        pred = np.mean(np.stack(pred, axis=0), axis=0)
+        self.nnunet_preprocess(stack_image)
 
-        # img_crf = img[0].cpu().detach().numpy()
-        # img_crf = img_crf - img_crf.min()
-        # img_crf = 255 * (img_crf / img_crf.max())
-        # img_crf[img_crf < 0] = 0
-        # img_crf[img_crf > 255] = 255
-        # img_crf = np.asarray(img_crf, np.uint8)
-        # pred_crf = np.asarray(pred, np.float32)
-        # pred = self.crf(img_crf, pred_crf)
+        for args_ in self.args:
+            self.nnunet_infer(args_)
 
-        min_d, max_d = meta[0,0], meta[1,0]
-        min_h, max_h = meta[0,1], meta[1,1]
-        min_w, max_w = meta[0,2], meta[1,2]
+        paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction',str(i),'ISLES2022_0001.npy') for i in range(len(self.args))]
+        prediction = self.nnunet_ensemble(paths, ref=flair_image_1mm)
 
-        n_class, original_shape, cropped_shape = pred.shape[0], meta[2], meta[3]
+#        pred_crf = SimpleITK.GetArrayFromImage(prediction)
+#        pred_crf = np.stack([1.-pred_crf, pred_crf])
+#        img_crf = SimpleITK.GetArrayFromImage(stack_image)
+#        img_crf = img_crf - img_crf.min(axis=(0,1,2))
+#        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
+#        img_crf[img_crf < 0] = 0
+#        img_crf[img_crf > 255] = 255
+#        img_crf = np.asarray(img_crf, np.uint8)
+#        pred_crf = np.asarray(pred_crf, np.float32)
+#        prediction = self.crf(img_crf, pred_crf)
+#        prediction = prediction[1]
+#        prediction = SimpleITK.GetImageFromArray(prediction)
 
-        final_pred = np.zeros((n_class, *original_shape))
-        final_pred[:, min_d:max_d, min_h:max_h, min_w:max_w] = pred
 
-        final_pred = np.transpose(final_pred, (0,3,2,1))
-        prediction = final_pred[1]
-
-        prediction = SimpleITK.GetImageFromArray(prediction)
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
 
         prediction = self.reslice(prediction, reference=dwi_image_rs)
