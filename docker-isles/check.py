@@ -111,11 +111,11 @@ class ploras():
 
     def crf(self, image, pred):
         # image = np.transpose(image, [1,2,3,0])
-        pair_energy = create_pairwise_bilateral(sdims=(5.0,)*3, schan=(5.0,)*image.shape[-1], img=image, chdim=3)
+        pair_energy = create_pairwise_bilateral(sdims=(1.0,)*3, schan=(1.0,)*image.shape[-1], img=image, chdim=3)
         d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
         U = unary_from_softmax(pred)
         d.setUnaryEnergy(U)
-        d.addPairwiseEnergy(pair_energy, compat=10)
+        d.addPairwiseEnergy(pair_energy, compat=3)
         out = d.inference(5)
         out = np.asarray(out, np.float32).reshape(pred.shape)
         return out
@@ -284,8 +284,8 @@ class ploras():
 
         prediction = (prediction > 0.5)
 
-#        prediction = remove_small_holes(prediction)
-#        prediction = remove_small_objects(prediction)
+#        prediction = remove_small_holes(prediction, 10, 1)
+#        prediction = remove_small_objects(prediction, 10, 1)
 
         self.cleanup()
 
