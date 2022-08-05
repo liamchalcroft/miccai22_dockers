@@ -126,6 +126,7 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
         img_crf[img_crf > 255] = 255
         img_crf = np.asarray(img_crf, np.uint8)
         pred_crf = np.asarray(pred_image_data, np.float32)
+        pred_crf = (pred_crf > 0.5) * pred_crf
         pred_crf = np.stack([1.-pred_crf, pred_crf])
         final_pred = crf(img_crf, pred_crf, sdims, schan, compat)
 
