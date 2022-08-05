@@ -259,18 +259,18 @@ class ploras():
         paths = [os.path.join('/home/lchalcroft/mdunet/miccai22_dockers/docker-isles/prediction',str(i),'ISLES2022_0001.npy') for i in range(len(self.args))]
         prediction = self.nnunet_ensemble(paths, ref=flair_image_1mm)
 
-#        pred_crf = SimpleITK.GetArrayFromImage(prediction)
-#        pred_crf = np.stack([1.-pred_crf, pred_crf])
-#        img_crf = SimpleITK.GetArrayFromImage(stack_image)
-#        img_crf = img_crf - img_crf.min(axis=(0,1,2))
-#        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
-#        img_crf[img_crf < 0] = 0
-#        img_crf[img_crf > 255] = 255
-#        img_crf = np.asarray(img_crf, np.uint8)
-#        pred_crf = np.asarray(pred_crf, np.float32)
-#        prediction = self.crf(img_crf, pred_crf)
-#        prediction = prediction[1]
-#        prediction = SimpleITK.GetImageFromArray(prediction)
+        pred_crf = SimpleITK.GetArrayFromImage(prediction)
+        pred_crf = np.stack([1.-pred_crf, pred_crf])
+        img_crf = SimpleITK.GetArrayFromImage(stack_image)
+        img_crf = img_crf - img_crf.min(axis=(0,1,2))
+        img_crf = 255 * (img_crf / img_crf.max(axis=(0,1,2)))
+        img_crf[img_crf < 0] = 0
+        img_crf[img_crf > 255] = 255
+        img_crf = np.asarray(img_crf, np.uint8)
+        pred_crf = np.asarray(pred_crf, np.float32)
+        prediction = self.crf(img_crf, pred_crf)
+        prediction = prediction[1]
+        prediction = SimpleITK.GetImageFromArray(prediction)
 
 
         prediction.SetOrigin(dwi_image_1mm.GetOrigin()), prediction.SetSpacing(dwi_image_1mm.GetSpacing()), prediction.SetDirection(dwi_image_1mm.GetDirection())
@@ -284,8 +284,8 @@ class ploras():
 
         prediction = (prediction > 0.5)
 
-        prediction = remove_small_holes(prediction, 10, 1)
-        prediction = remove_small_objects(prediction, 10, 1)
+        # prediction = remove_small_holes(prediction, 10, 1)
+        # prediction = remove_small_objects(prediction, 10, 1)
 
         self.cleanup()
 
