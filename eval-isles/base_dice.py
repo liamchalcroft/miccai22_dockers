@@ -75,8 +75,8 @@ pred_list = [os.path.join('/home/lchalcroft/mdunet/isles_preds', dwi.split('/')[
 
 dice_list = []
 
-for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in tqdm(enumerate(zip(dwi_list, adc_list, flair_list, gt_list, pred_list)), total=len(dwi_list)):
-# for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in enumerate(zip(dwi_list, adc_list, flair_list, gt_list, pred_list)):
+# for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in tqdm(enumerate(zip(dwi_list, adc_list, flair_list, gt_list, pred_list)), total=len(dwi_list)):
+for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in enumerate(zip(dwi_list, adc_list, flair_list, gt_list, pred_list)):
     
     dwi_image = SimpleITK.ReadImage(dwi_path)
     adc_image = SimpleITK.ReadImage(adc_path)
