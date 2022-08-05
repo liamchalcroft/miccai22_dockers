@@ -143,6 +143,8 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
 
         dice_val = dice(prediction.flatten(), gt_image_data.flatten())
 
+        print(dice_val)
+
         dice_list.append(dice_val)
 
     mean_dice = np.nanmean(dice_list)
