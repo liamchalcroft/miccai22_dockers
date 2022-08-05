@@ -285,7 +285,7 @@ class ploras():
         prediction = (prediction > 0.5)
 
         prediction = remove_small_holes(prediction, 10, 1)
-        prediction = remove_small_objects(prediction, 10, 1)
+        prediction = remove_small_objects(prediction, 2, 1)
 
         self.cleanup()
 
