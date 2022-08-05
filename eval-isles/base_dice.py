@@ -118,15 +118,15 @@ for i,(dwi_path,adc_path,flair_path,gt_path,pred_path) in tqdm(enumerate(zip(dwi
     pred_crf = np.asarray(pred_image_data, np.float32)
     pred_crf = np.stack([1.-pred_crf, pred_crf])
     final_pred = pred_crf
-    # final_pred = crf(img_crf, pred_crf, (0.1,)*3, (0.1,), 3)
+    final_pred = crf(img_crf, pred_crf, (0.1,)*3, (0.1,), 3)
     prediction = final_pred[1]
         
     prediction[prediction > 1] = 0
 
     prediction = (prediction > 0.5)
 
-    # prediction = remove_small_holes(prediction, 10, 1)
-    # prediction = remove_small_objects(prediction, 10, 1)
+    prediction = remove_small_holes(prediction, 10, 1)
+    prediction = remove_small_objects(prediction, 10, 1)
 
     prediction = prediction.astype(int)
 
