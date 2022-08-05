@@ -99,22 +99,23 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
         dwi_image_rs = reslice(dwi_image, reference=flair_image)
         adc_image_rs = reslice(adc_image, reference=flair_image)
         flair_image_rs = reslice(flair_image, reference=flair_image)
-        pred_image_rs = reslice(pred_image, reference=flair_image)
+        dwi_image_rs = reslice(dwi_image_rs, reference=dwi_image)
+        adc_image_rs = reslice(adc_image_rs, reference=dwi_image)
+        flair_image_rs = reslice(flair_image_rs, reference=dwi_image)
+
+        gt_image_rs = reslice(gt_image, reference=dwi_image)
+        pred_image_rs = reslice(pred_image, reference=dwi_image)
 
         dwi_image_data = SimpleITK.GetArrayFromImage(dwi_image_rs)
         adc_image_data = SimpleITK.GetArrayFromImage(adc_image_rs)
         flair_image_data = SimpleITK.GetArrayFromImage(flair_image_rs)
+        gt_image_data = SimpleITK.GetArrayFromImage(gt_image_rs)
         pred_image_data = SimpleITK.GetArrayFromImage(pred_image_rs)
 
         img = np.stack([adc_image_data, dwi_image_data, flair_image_data])
-        del adc_image_data, dwi_image_data, flair_image_data
 
         img = monai.transforms.NormalizeIntensity(nonzero=True,channel_wise=True)(img)
         orig_shape = img.shape[1:]
-
-        # plt.figure()
-        # plt.imshow(img[0,...,50])
-        # plt.show()
 
         img = monai.transforms.ToTensor(dtype=torch.float32)(img).cpu().detach().numpy()
 
@@ -130,8 +131,6 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
 
         prediction = final_pred[1]
 
-        del final_pred, pred_crf, img_crf, img
-
         prediction[prediction > 1] = 0
 
         prediction = (prediction > 0.5)
@@ -141,24 +140,11 @@ def black_box(hole_t, hole_c, remv_t, remv_c, sdims, schan, compat, n_samples=50
 
         prediction = prediction.astype(int)
 
-        fpred_image = SimpleITK.GetImageFromArray(prediction)
-        fpred_image.SetOrigin(pred_image.GetOrigin()), fpred_image.SetSpacing(pred_image.GetSpacing()), fpred_image.SetDirection(pred_image.GetDirection())
-
-        gt_image_rs = reslice(gt_image, reference=dwi_image)
-        fpred_image_rs = reslice(fpred_image, reference=dwi_image)
-
-        gt_image_data = SimpleITK.GetArrayFromImage(gt_image_rs)
-        prediction = SimpleITK.GetArrayFromImage(fpred_image_rs)
-
         dice_val = dice(prediction.flatten(), gt_image_data.flatten())
 
         dice_list.append(dice_val)
 
-        # print(np.mean(dice_list))
-
     mean_dice = np.nanmean(dice_list)
-
-    del prediction, gt_image_data, fpred_image_rs, gt_image_rs, fpred_image
 
     return mean_dice
 
