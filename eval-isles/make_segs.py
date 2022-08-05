@@ -240,9 +240,6 @@ class ploras():
         stack_image = SimpleITK.GetImageFromArray(img, isVector=True)
         stack_image.SetOrigin(flair_image_1mm.GetOrigin()), stack_image.SetSpacing(flair_image_1mm.GetSpacing()), stack_image.SetDirection(flair_image_1mm.GetDirection())
 
-        SimpleITK.WriteImage(stack_image, 'stack_image.nii.gz')
-        SimpleITK.WriteImage(adc_image_rs, 'adc_image.nii.gz')
-
         self.nnunet_preprocess(stack_image)
 
         for args_ in self.args:
