@@ -213,9 +213,9 @@ class ploras():
 
 
         # Get all json inputs.
-        dwi_json, adc_json, flair_json = input_data['dwi_json'],\
-                                         input_data['adc_json'],\
-                                         input_data['flair_json']
+        # dwi_json, adc_json, flair_json = input_data['dwi_json'],\
+        #                                  input_data['adc_json'],\
+        #                                  input_data['flair_json']
 
         self.setup()
 
