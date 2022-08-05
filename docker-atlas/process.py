@@ -106,7 +106,7 @@ class ploras():
             resample.SetSize(reference.GetSize())
             resample.SetOutputDirection(reference.GetDirection())
             resample.SetOutputOrigin(reference.GetOrigin())
-            resample.SetDefaultPixelValue(image.GetPixelIDValue())
+            resample.SetDefaultPixelValue(0)
 
             newimage = resample.Execute(image)
             return newimage
