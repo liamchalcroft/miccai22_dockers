@@ -355,8 +355,6 @@ class ploras():
         elif filetype == 'json':
             file_list = list(self._input_path.glob("*{}.json".format(slug)))
 
-        print(self._input_path / 'images' / slug)
-
         # Check that there is a single file to load.
         if len(file_list) != 1:
             print('Loading error')
