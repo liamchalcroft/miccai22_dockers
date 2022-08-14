@@ -90,10 +90,15 @@ class ploras():
                                 affinity='unique_contiguous', scheduler=False, optimizer='adam', blend='gaussian', 
                                 train_batches=0, test_batches=0)
 
+        # self.model_paths = [
+        #     '../docker-atlas/checkpoints/0/best.ckpt', '../docker-atlas/checkpoints/1/best.ckpt', 
+        #     '../docker-atlas/checkpoints/2/best.ckpt', '../docker-atlas/checkpoints/3/best.ckpt', 
+        #     '../docker-atlas/checkpoints/4/best.ckpt'
+        #     ]
         self.model_paths = [
-            '../docker-atlas/checkpoints/0/best.ckpt', '../docker-atlas/checkpoints/1/best.ckpt', 
-            '../docker-atlas/checkpoints/2/best.ckpt', '../docker-atlas/checkpoints/3/best.ckpt', 
-            '../docker-atlas/checkpoints/4/best.ckpt'
+            '../docker-atlas/checkpoints/0/best-brats.ckpt', '../docker-atlas/checkpoints/1/best-brats.ckpt', 
+            '../docker-atlas/checkpoints/2/best-brats.ckpt', '../docker-atlas/checkpoints/3/best-brats.ckpt', 
+            '../docker-atlas/checkpoints/4/best-brats.ckpt'
             ]
         self.args = []
         for i,pth in enumerate(self.model_paths):
