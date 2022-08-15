@@ -1,4 +1,5 @@
-FROM python:3.9-slim
+ARG FROM_IMAGE_NAME=nvcr.io/nvidia/pytorch:21.11-py3
+FROM ${FROM_IMAGE_NAME} 
 
 RUN apt-get update && apt-get -y install --reinstall build-essential && apt-get -y install git && apt-get -y install gcc
 
@@ -18,12 +19,14 @@ RUN python -m pip install --user -U pip
 
 
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
-RUN python -m pip install --user -rrequirements.txt
+RUN python -m pip install --user -r requirements.txt
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
 COPY --chown=algorithm:algorithm nnunet /opt/algorithm/nnunet
 COPY --chown=algorithm:algorithm utils /opt/algorithm/utils
 COPY --chown=algorithm:algorithm checkpoints /opt/algorithm/checkpoints
 COPY --chown=algorithm:algorithm config /opt/algorithm/config
+COPY --chown=algorithm:algorithm settings.py /opt/algorithm/
+COPY --chown=algorithm:algorithm grandchallenges/ /opt/algorithm/grandchallenges
 
 ENTRYPOINT python -m process $0 $@
