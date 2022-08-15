@@ -19,13 +19,18 @@ RUN python -m pip install --user -U pip
 
 
 COPY --chown=algorithm:algorithm requirements.txt /opt/algorithm/
-RUN python -m pip install --user -r requirements.txt
+
+RUN pip install --disable-pip-version-check --user -r requirements.txt
+RUN pip install --extra-index-url https://developer.download.nvidia.com/compute/redist/ nvidia-dali-cuda110==1.16.0
+
 
 COPY --chown=algorithm:algorithm process.py /opt/algorithm/
 COPY --chown=algorithm:algorithm nnunet /opt/algorithm/nnunet
 COPY --chown=algorithm:algorithm utils /opt/algorithm/utils
 COPY --chown=algorithm:algorithm checkpoints /opt/algorithm/checkpoints
 COPY --chown=algorithm:algorithm config /opt/algorithm/config
+COPY --chown=algorithm:algorithm data_loading /opt/algorithm/data_loading
+COPY --chown=algorithm:algorithm data_preprocessing /opt/algorithm/data_preprocessing
 COPY --chown=algorithm:algorithm settings.py /opt/algorithm/
 COPY --chown=algorithm:algorithm grandchallenges/ /opt/algorithm/grandchallenges
 
