@@ -356,7 +356,7 @@ class ploras:
                 self.nnunet_infer(args_)
 
             paths = [
-                os.path.join("/opt/algorithm/prediction", str(i), "ISLES2022_0001.npy")
+                os.path.join("/opt/algorithm/prediction", str(i), "ATLAS2022_0001.npy")
                 for i in range(len(self.args))
             ]
             prediction = self.nnunet_ensemble(paths, ref=t1w_image_n4ss)
