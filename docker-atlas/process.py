@@ -378,7 +378,7 @@ class ploras:
 
             prediction = SimpleITK.GetArrayFromImage(prediction)
 
-            prediction = prediction > 0.500001
+            prediction = prediction > 0.51
 
             prediction = remove_small_holes(prediction, 10, 1)
             prediction = remove_small_objects(prediction, 2, 1)
