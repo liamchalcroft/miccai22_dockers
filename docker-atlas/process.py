@@ -371,23 +371,18 @@ class ploras:
             img_crf = np.asarray(img_crf, np.uint8)
             pred_crf = np.asarray(pred_crf, np.float32)
             prediction = self.crf(img_crf, pred_crf)
-            prediction = prediction[1]
-            prediction = SimpleITK.GetImageFromArray(prediction)
+            pred = prediction[1]
 
-            prediction = self.reslice(prediction, reference=t1w_image)
+            pred = pred > 0.51
 
-            prediction = SimpleITK.GetArrayFromImage(prediction)
-
-            prediction = prediction > 0.51
-
-            prediction = remove_small_holes(prediction, 10, 1)
-            prediction = remove_small_objects(prediction, 2, 1)
+            pred = remove_small_holes(pred, 10, 1)
+            pred = remove_small_objects(pred, 2, 1)
 
             self.cleanup()
 
-            prediction = prediction.astype(int)
+            pred = pred.astype(int)
 
-            prediction = SimpleITK.GetImageFromArray(prediction)
+            prediction = SimpleITK.GetImageFromArray(pred)
             prediction.SetOrigin(t1w_image.GetOrigin())
             prediction.SetSpacing(t1w_image.GetSpacing())
             prediction.SetDirection(t1w_image.GetDirection())
