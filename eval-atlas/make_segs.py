@@ -66,7 +66,9 @@ class ploras:
         if self.debug:
             # self._input_path = Path("/home/lchalcroft/Data/ATLAS_R2.0/Testing/")
             self._input_path = Path("/home/lchalcroft/Data/ATLAS_R2.0/Training/")
-            self._output_path = Path("/home/lchalcroft/mdunet/eval-atlas/output-train/")
+            self._output_path = Path(
+                "/home/lchalcroft/mdunet/eval-atlas/output-makesegs/"
+            )
             self._algorithm_output_path = (
                 self._output_path / "stroke-lesion-segmentation"
             )
@@ -151,20 +153,20 @@ class ploras:
             test_batches=0,
         )
 
-        # self.model_paths = [
-        #     "../docker-atlas/checkpoints/0/best.ckpt",
-        #     "../docker-atlas/checkpoints/1/best.ckpt",
-        #     "../docker-atlas/checkpoints/2/best.ckpt",
-        #     "../docker-atlas/checkpoints/3/best.ckpt",
-        #     "../docker-atlas/checkpoints/4/best.ckpt",
-        # ]
         self.model_paths = [
-            "../docker-atlas/checkpoints/0/best-brats.ckpt",
-            "../docker-atlas/checkpoints/1/best-brats.ckpt",
-            "../docker-atlas/checkpoints/2/best-brats.ckpt",
-            "../docker-atlas/checkpoints/3/best-brats.ckpt",
-            "../docker-atlas/checkpoints/4/best-brats.ckpt",
+            "../docker-atlas/checkpoints/0/best.ckpt",
+            "../docker-atlas/checkpoints/1/best.ckpt",
+            "../docker-atlas/checkpoints/2/best.ckpt",
+            "../docker-atlas/checkpoints/3/best.ckpt",
+            "../docker-atlas/checkpoints/4/best.ckpt",
         ]
+        # self.model_paths = [
+        #     "../docker-atlas/checkpoints/0/best-brats.ckpt",
+        #     "../docker-atlas/checkpoints/1/best-brats.ckpt",
+        #     "../docker-atlas/checkpoints/2/best-brats.ckpt",
+        #     "../docker-atlas/checkpoints/3/best-brats.ckpt",
+        #     "../docker-atlas/checkpoints/4/best-brats.ckpt",
+        # ]
         self.args = []
         for i, pth in enumerate(self.model_paths):
             ckpt = torch.load(pth, map_location=self.device)
@@ -447,11 +449,15 @@ class ploras:
 
         self.cleanup()
 
+        img = SimpleITK.GetArrayFromImage(
+            t1w_image if self.preprocessed else t1w_image_n4ss
+        )
+
         #################################### End of your prediction method. ############################################
         ################################################################################################################
 
         # return prediction.astype(int)
-        return prediction
+        return img, prediction
 
     def process_isles_case(self, input_data, input_filename):
         # Get origin, spacing and direction from the DWI image.
@@ -462,9 +468,14 @@ class ploras:
         )
 
         # Segment images.
-        prediction = self.predict(input_data)  # function you need to update!
+        img, prediction = self.predict(input_data)  # function you need to update!
 
         # Build the itk object.
+        output_n4ss = SimpleITK.GetImageFromArray(img)
+        output_n4ss.SetOrigin(origin), output_n4ss.SetSpacing(
+            spacing
+        ), output_n4ss.SetDirection(direction)
+
         output_image = SimpleITK.GetImageFromArray(prediction)
         output_image.SetOrigin(origin), output_image.SetSpacing(
             spacing
@@ -477,6 +488,11 @@ class ploras:
             "T1w", "label-L_mask"
         )
         SimpleITK.WriteImage(output_image, str(output_image_path))
+
+        output_subj_path = self._algorithm_output_path / input_filename.replace(
+            "T1w", "n4ss"
+        )
+        SimpleITK.WriteImage(output_n4ss, str(output_subj_path))
 
         # Write segmentation file to json.
         if output_image_path.exists():
@@ -510,6 +526,13 @@ class ploras:
             )
         )
         t1w_image_paths = [Path(p) for p in t1w_image_paths]
+
+        ###
+        from random import shuffle
+
+        shuffle(t1w_image_paths)
+        t1w_image_paths = t1w_image_paths[:50]
+        ###
 
         return t1w_image_paths
 
