@@ -64,8 +64,9 @@ class ploras:
 
         self.debug = True  # False for running the docker!
         if self.debug:
-            self._input_path = Path("/home/lchalcroft/Data/ATLAS_R2.0/Testing/")
-            self._output_path = Path("/home/lchalcroft/mdunet/eval-atlas/output/")
+            # self._input_path = Path("/home/lchalcroft/Data/ATLAS_R2.0/Testing/")
+            self._input_path = Path("/home/lchalcroft/Data/ATLAS_R2.0/Training/")
+            self._output_path = Path("/home/lchalcroft/mdunet/eval-atlas/output-train/")
             self._algorithm_output_path = (
                 self._output_path / "stroke-lesion-segmentation"
             )
