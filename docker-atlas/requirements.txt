@@ -3,10 +3,12 @@ evalutils==0.3.1
 
 scipy
 
-# torch==1.8
 monai
+nibabel
+git+https://github.com/NVIDIA/dllogger
 git+https://github.com/lucasb-eyer/pydensecrf.git
 pytorch-lightning
+rich
 pyrobex
 
 anyio==3.5.0
