@@ -378,7 +378,7 @@ class ploras:
 
             prediction = SimpleITK.GetArrayFromImage(prediction)
 
-            prediction = prediction > 0.5
+            prediction = prediction > 0.500001
 
             prediction = remove_small_holes(prediction, 10, 1)
             prediction = remove_small_objects(prediction, 2, 1)
@@ -386,6 +386,11 @@ class ploras:
             self.cleanup()
 
             prediction = prediction.astype(int)
+
+            prediction = SimpleITK.GetImageFromArray(prediction)
+            prediction.SetOrigin(t1w_image.GetOrigin())
+            prediction.SetSpacing(t1w_image.GetSpacing())
+            prediction.SetDirection(t1w_image.GetDirection())
 
             out_name = os.path.basename(fil)
             out_filepath = os.path.join(out_path, out_name)
