@@ -366,7 +366,7 @@ class ploras:
 
             pred_crf = SimpleITK.GetArrayFromImage(prediction)
             pred_crf = np.stack([1.0 - pred_crf, pred_crf])
-            img_crf = SimpleITK.GetArrayFromImage(t1w_image_n4ss)
+            img_crf = SimpleITK.GetArrayFromImage(t1w_image_n4ss)[..., None]
             img_crf = img_crf - img_crf.min(axis=(0, 1, 2))
             img_crf = 255 * (img_crf / img_crf.max(axis=(0, 1, 2)))
             img_crf[img_crf < 0] = 0
