@@ -227,27 +227,28 @@ class ploras:
         return out
 
     def nnunet_preprocess(self, image):
-        os.makedirs("/opt/algorithm/data/ATLAS2022/imagesTs/", exist_ok=True)
+        os.makedirs("/opt/algorithm/data/ATLAS2022_ss/imagesTs/", exist_ok=True)
         SimpleITK.WriteImage(
-            image, str("/opt/algorithm/data/ATLAS2022/imagesTs/ATLAS2022_0001.nii.gz")
+            image,
+            str("/opt/algorithm/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz"),
         )
         data_desc = {
             "description": "Stroke Lesion Segmentation",
             "labels": {"0": "Background", "1": "Lesion"},
             "licence": "BLANK",
             "modality": {"0": "T1"},
-            "name": "ATLAS2022",
+            "name": "ATLAS2022_ss",
             "numTest": 1,
             "numTraining": 0,
             "reference": "BLANK",
             "release": "BLANK",
             "tensorImageSize": "4D",
             "test": [
-                "/opt/algorithm/data/ATLAS2022/imagesTs/ATLAS2022_0001.nii.gz",
+                "/opt/algorithm/data/ATLAS2022_ss/imagesTs/ATLAS2022_ss_0001.nii.gz",
             ],
             "training": [],
         }
-        with open("/opt/algorithm/data/ATLAS2022/dataset.json", "w") as f:
+        with open("/opt/algorithm/data/ATLAS2022_ss/dataset.json", "w") as f:
             json.dump(data_desc, f)
         args = SimpleNamespace(
             data="/opt/algorithm/data",
@@ -356,7 +357,9 @@ class ploras:
                 self.nnunet_infer(args_)
 
             paths = [
-                os.path.join("/opt/algorithm/prediction", str(i), "ATLAS2022_0001.npy")
+                os.path.join(
+                    "/opt/algorithm/prediction", str(i), "ATLAS2022_ss_0001.npy"
+                )
                 for i in range(len(self.args))
             ]
             prediction = self.nnunet_ensemble(paths, ref=t1w_image_n4ss)
