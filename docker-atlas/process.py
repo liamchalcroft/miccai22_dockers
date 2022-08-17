@@ -318,9 +318,9 @@ class ploras:
         os.makedirs("/opt/algorithm/prediction", exist_ok=True)
 
     def cleanup(self):
-        shutil.rmtree("/opt/algorithm/data")
-        shutil.rmtree("/opt/algorithm/results")
-        shutil.rmtree("/opt/algorithm/prediction")
+        shutil.rmtree("/opt/algorithm/data", ignore_errors=True)
+        shutil.rmtree("/opt/algorithm/results", ignore_errors=True)
+        shutil.rmtree("/opt/algorithm/prediction", ignore_errors=True)
 
     def process(self):
         inp_path = loader_settings["InputPath"]  # Path for the input
