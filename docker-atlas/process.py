@@ -16,7 +16,11 @@ import torch
 from nnunet.nn_unet import NNUnet
 from types import SimpleNamespace
 import pydensecrf.densecrf as dcrf
-from pydensecrf.utils import unary_from_softmax, create_pairwise_bilateral
+from pydensecrf.utils import (
+    unary_from_softmax,
+    create_pairwise_bilateral,
+    create_pairwise_gaussian,
+)
 from tqdm import tqdm
 from data_preprocessing.preprocessor import Preprocessor
 import json
@@ -214,14 +218,17 @@ class ploras:
             )
 
     def crf(self, image, pred):
-        # image = np.transpose(image, [1,2,3,0])
-        pair_energy = create_pairwise_bilateral(
+        bilateral_energy = create_pairwise_bilateral(
             sdims=(1.0,) * 3, schan=(1.0,) * image.shape[-1], img=image, chdim=3
+        )
+        gaussian_energy = create_pairwise_gaussian(
+            sdims=(1.0,) * 3, shape=image.shape[:-1]
         )
         d = dcrf.DenseCRF(np.prod(image.shape[:-1]), pred.shape[0])
         U = unary_from_softmax(pred)
         d.setUnaryEnergy(U)
-        d.addPairwiseEnergy(pair_energy, compat=3)
+        d.addPairwiseEnergy(bilateral_energy, compat=3)
+        d.addPairwiseEnergy(gaussian_energy, compat=3)
         out = d.inference(5)
         out = np.asarray(out, np.float32).reshape(pred.shape)
         return out
@@ -378,8 +385,8 @@ class ploras:
 
             pred = pred > 0.51
 
-            pred = remove_small_holes(pred, 10, 1)
-            pred = remove_small_objects(pred, 2, 1)
+            pred = remove_small_holes(pred, 50, 3)
+            pred = remove_small_objects(pred, 25, 3)
 
             self.cleanup()
 
